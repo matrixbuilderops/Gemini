@@ -1,0 +1,29 @@
+the sytem shoudl be setup in such a way tha tthe flags are all told to the modes so you don toha ve to setup the flags per mode, same thign with folder and fiel creations, same thin with usin math all math in the system should be real. demo should use a stokc bitcoin tempael but real. 
+
+Brain.qtl-global orchestrator,makes the aggerated,aggerated index files, system report and error rerpto for teh brain,qtl
+brainstem-brain's arm in the system-> makes fodlers and tells everyoen the folder heriacy, makes the brainstem system files and brainstem system error fiels
+
+Dynamic-tempatle manger-makes ledger files,makes math proof files, make the submission file which is svaed in the temporary tempatle fodler, makes the sytem fiel, eorr fiel for the dynamic tempalte manger
+
+production miner-makes the solution file insideof the process folder which it was aassigned insdieo fthe tmepaory tempalte folder
+, make sits own system fiel and erro file
+
+
+looping- makes the template file, the submsion logs, system reprot and error report fiels fo rthe looping, looping starts teh mining process and also make sthe fodlers for each minig process isnce it starts them.
+
+
+aggerated= taking allof hte sections  togtert
+
+agerated index =taking all of the sectiosn for allo fthe hieracy toghert
+
+
+example
+system report aggerated for the yar foldre woudl be shouwoign you everytign for allof the omponts for taht elvel so the year.
+
+system rerpto aggerated index for year would show you everying for all of the compontes for that level so that woudl be year for this exampel but it would also show allof the vle bleow all the way down to hourly
+
+
+system file exampels should be saved in root 
+demo,test, stagging, live should all refecne the same exampel files
+
+live is not a flg fo rthe sytem it is how the system should operate when there is no demo, test, staggin flag 

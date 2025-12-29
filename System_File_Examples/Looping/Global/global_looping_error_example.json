@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "created_by": "Looping",
+    "version": "1.0"
+  },
+  "total_errors": 0,
+  "errors": [
+    {
+      "error_id": "loop_err_001",
+      "timestamp": "2025-11-30T06:00:05.000000Z",
+      "severity": "critical",
+      "error_type": "submission_rejected",
+      "message": "Bitcoin Core rejected block submission",
+      "context": {
+        "block_hash": "0000000000...",
+        "network_response": "rejected",
+        "reason": "duplicate",
+        "rpc_endpoint": "http://127.0.0.1:8332"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "file_type": "global_day_ledger",
+    "level": "day",
+    "year": "2025",
+    "month": "12",
+    "day": "10",
+    "created": "2025-12-10T00:00:00.000000Z",
+    "last_updated": "2025-12-10T00:00:00.000000Z",
+    "mode": "production",
+    "component": "DTM",
+    "purpose": "Aggregates ALL entries for this day from all hours"
+  },
+  "hashes_this_day": 0,
+  "blocks_found_this_day": 0,
+  "total_attempts_this_day": 0,
+  "best_leading_zeros_this_day": 0,
+  "entries": []
+}

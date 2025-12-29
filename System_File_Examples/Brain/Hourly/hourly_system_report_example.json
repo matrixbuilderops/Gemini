@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "hour": "2025-11-30_06",
+    "purpose": "Hourly aggregation from all components"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "hour": "2025-11-30_06",
+  "system_status": "OPERATIONAL",
+  "blocks_found": 1,
+  "total_hashes": 7500000,
+  "submissions": 1,
+  "components": {
+    "brain": {
+      "aggregations_performed": 1,
+      "status": "healthy"
+    },
+    "brainstem": {
+      "folders_created": 0,
+      "files_validated": 31,
+      "status": "healthy"
+    },
+    "dtm": {
+      "templates_processed": 1,
+      "solutions_validated": 1,
+      "status": "healthy"
+    },
+    "looping": {
+      "mining_sessions": 1,
+      "templates_distributed": 1,
+      "submissions": 1,
+      "status": "healthy"
+    },
+    "miners": {
+      "active_miners": 5,
+      "total_hashes": 7500000,
+      "average_hash_rate": 1250000,
+      "status": "healthy"
+    }
+  }
+}

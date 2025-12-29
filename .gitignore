@@ -1,0 +1,18 @@
+# Sensitive config
+config.json
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# System artifacts
+.brain_version
+.gemini/
+.gemini_security/
+
+# Mining data (don't push large simulation data to GitHub)
+Mining/
+Test/
+User_Look_at/

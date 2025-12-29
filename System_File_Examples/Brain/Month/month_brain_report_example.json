@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "level": "month",
+    "year": "2025",
+    "month": "12",
+    "purpose": "Month-level Brain orchestration tracking"
+  },
+  "total_orchestrations": 0,
+  "total_aggregations": 0,
+  "days_active": 0,
+  "month": "12",
+  "reports": []
+}

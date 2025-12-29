@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "purpose": "Hourly mining attempts tracking",
+    "hour": "2025-12-04_00"
+  },
+  "hour": "2025-12-04_00",
+  "total_hashes_this_hour": 0,
+  "total_blocks_found_this_hour": 0,
+  "total_attempts_this_hour": 0,
+  "computational_hours_this_hour": 0.0,
+  "system_status": {
+    "status": "operational",
+    "timestamp": "2025-12-04T00:59:59.000000Z",
+    "active_miners_this_hour": 0,
+    "miners_with_issues": 0,
+    "average_hash_rate_this_hour": 0,
+    "peak_hash_rate_this_hour": 0,
+    "lowest_hash_rate_this_hour": 0,
+    "issues": [],
+    "notes": "Hourly tracking initialized"
+  },
+  "entries": [
+    {
+      "attempt_id": "attempt_20251204_000000_001",
+      "timestamp": "2025-12-04T00:00:00.000000Z",
+      "block_height": 870000,
+      "miner_id": "miner_001",
+      "nonce": 3908178616,
+      "merkleroot": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+      "block_hash": "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+      "meets_difficulty": true,
+      "leading_zeros": 19,
+      "status": "mined",
+      "submitted_to_network": true,
+      "submission_timestamp": "2025-12-04T00:00:05.123456Z"
+    }
+  ]
+}

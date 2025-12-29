@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "hour": "2025-11-30_06"
+  },
+  "hour": "2025-11-30_06",
+  "errors": [
+    {
+      "error_id": "dtm_err_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "severity": "error",
+      "error_type": "validation_failed",
+      "message": "Solution insufficient leading zeros",
+      "miner_id": "miner_002"
+    }
+  ]
+}

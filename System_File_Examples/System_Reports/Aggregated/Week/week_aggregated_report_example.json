@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "level": "week",
+    "year": "2025",
+    "week": "W50",
+    "purpose": "Week-level aggregation from all components"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "week": "W50",
+  "total_reports": 0,
+  "reports_by_component": {
+    "Brain": 0,
+    "Brainstem": 0,
+    "DTM": 0,
+    "Looping": 0,
+    "Miners": 0
+  },
+  "entries": []
+}

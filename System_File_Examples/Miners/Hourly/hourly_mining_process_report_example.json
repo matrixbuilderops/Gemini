@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "created_by": "ALL Miners",
+    "hour": "2025-11-30_06"
+  },
+  "hour": "2025-11-30_06",
+  "total_hashes": 7500000,
+  "miners": {
+    "miner_001": {
+      "ip_address": "192.168.1.100",
+      "hostname": "mining-rig-01",
+      "hashes_this_hour": 7500000,
+      "hash_rate_avg": 1250000,
+      "hash_rate_peak": 1350000,
+      "nonce_ranges_tried": [
+        {
+          "start": 3900000000,
+          "end": 3910000000
+        }
+      ],
+      "best_attempt": {
+        "nonce": 3908178616,
+        "leading_zeros": 19,
+        "block_hash": "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234"
+      },
+      "hardware_status": {
+        "cpu_usage_percent": 85,
+        "ram_usage_percent": 50,
+        "gpu_temp_c": 72,
+        "gpu_power_watts": 350
+      }
+    }
+  }
+}

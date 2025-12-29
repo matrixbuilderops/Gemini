@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "file_type": "aggregated_system_reports",
+    "created_by": "Brain",
+    "purpose": "Master aggregation from Brain, Brainstem, DTM, Looping, Miners",
+    "created": "2025-12-10T00:00:00.000000Z"
+  },
+  "summary": {
+    "total_reports": 0,
+    "reports_by_component": {
+      "Brain": 0,
+      "Brainstem": 0,
+      "DTM": 0,
+      "Looping": 0,
+      "Miners": 0
+    }
+  },
+  "entries": []
+}

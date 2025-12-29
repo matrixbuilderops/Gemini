@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "hour": "2025-11-30_06"
+  },
+  "hour": "2025-11-30_06",
+  "templates_processed": 1,
+  "solutions_validated": 1,
+  "guidance_issued": {
+    "miner_001": {
+      "nonce_range": {
+        "start": 3900000000,
+        "end": 3910000000
+      },
+      "strategy": "Quasar-Class"
+    }
+  }
+}

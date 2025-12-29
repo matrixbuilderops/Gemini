@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "file_type": "network_submissions",
+    "created_by": "Looping",
+    "purpose": "Track VALID blocks submitted to network",
+    "created": "2025-12-10T00:00:00.000000Z"
+  },
+  "summary": {
+    "total_submitted": 0,
+    "accepted": 0,
+    "rejected": 0,
+    "pending": 0
+  },
+  "entries": []
+}

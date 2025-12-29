@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "created_by": "Looping",
+    "purpose": "Hourly submission tracking and network responses",
+    "hour": "2025-12-04_00"
+  },
+  "hour": "2025-12-04_00",
+  "total_submissions_this_hour": 0,
+  "accepted_this_hour": 0,
+  "rejected_this_hour": 0,
+  "orphaned_this_hour": 0,
+  "pending_this_hour": 0,
+  "system_status": {
+    "status": "operational",
+    "timestamp": "2025-12-04T00:59:59.999999Z",
+    "bitcoin_core_connected": true,
+    "bitcoin_core_version": "/Satoshi:26.0.0/",
+    "bitcoin_core_uptime_hours": 0,
+    "network_difficulty": 0,
+    "average_submission_latency_ms": 0,
+    "rpc_errors_this_hour": 0,
+    "acceptance_rate_this_hour": 0,
+    "issues": [],
+    "notes": "Hourly tracking initialized"
+  },
+  "submissions": [
+    {
+      "submission_id": "sub_20251204_000005_001",
+      "timestamp": "2025-12-04T00:00:05.123456Z",
+      "block_height": 870000,
+      "block_hash": "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+      "block_submission_file": "block_submission_870000_20251204_000000.json",
+      "miner_id": "miner_001",
+      "nonce": 3908178616,
+      "network_response": {
+        "status": "accepted",
+        "rpc_response": "null",
+        "response_time_ms": 0,
+        "node_version": "/Satoshi:26.0.0/"
+      },
+      "references": {
+        "ledger_entry": "attempt_20251204_000000_001",
+        "math_proof": "proof_20251204_000000_001",
+        "block_submission": "block_submission_870000_20251204_000000.json"
+      }
+    }
+  ]
+}

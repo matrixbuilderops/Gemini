@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "purpose": "Master aggregation from all components",
+    "version": "1.0"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "last_aggregation": "2025-11-30T06:00:00.000000Z",
+  "system_status": "OPERATIONAL",
+  "total_blocks_found": 3,
+  "total_submissions": 3,
+  "total_hashes": 150000000000,
+  "components": {
+    "brain": {
+      "status": "healthy",
+      "orchestrations": 150,
+      "aggregations": 150,
+      "last_update": "2025-11-30T06:00:00Z"
+    },
+    "brainstem": {
+      "status": "healthy",
+      "initializations": 1,
+      "folders_created": 150,
+      "files_generated": 31,
+      "last_update": "2025-11-30T01:00:00Z"
+    },
+    "dtm": {
+      "status": "healthy",
+      "templates_processed": 150,
+      "validations": 3,
+      "solutions_found": 3,
+      "last_update": "2025-11-30T06:00:00Z"
+    },
+    "looping": {
+      "status": "healthy",
+      "mining_sessions": 50,
+      "submissions": 3,
+      "accepted": 3,
+      "rejected": 0,
+      "last_update": "2025-11-30T06:00:05Z"
+    },
+    "miners": {
+      "status": "healthy",
+      "active_miners": 5,
+      "total_hashes": 150000000000,
+      "blocks_found": 3,
+      "average_hash_rate": 1250000,
+      "last_update": "2025-11-30T06:00:00Z"
+    }
+  },
+  "performance_summary": {
+    "uptime_hours": 240,
+    "blocks_per_hour": 0.0125,
+    "average_system_hash_rate": 1250000
+  },
+  "hourly_summaries": [
+    {
+      "hour": "2025-11-30_06",
+      "blocks_found": 1,
+      "hashes": 7500000,
+      "submissions": 1,
+      "system_status": "OPERATIONAL"
+    }
+  ]
+}

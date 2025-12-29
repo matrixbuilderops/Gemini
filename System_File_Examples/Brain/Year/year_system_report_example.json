@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "level": "year",
+    "year": "2025",
+    "purpose": "Year-level system aggregation"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "year": "2025",
+  "total_blocks_found": 0,
+  "total_submissions": 0,
+  "reports": []
+}

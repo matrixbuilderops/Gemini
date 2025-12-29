@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "version": "1.0"
+  },
+  "total_orchestrations": 150,
+  "total_aggregations": 150,
+  "reports": [
+    {
+      "report_id": "brain_report_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "components_aggregated": 5,
+      "files_processed": 20
+    }
+  ]
+}

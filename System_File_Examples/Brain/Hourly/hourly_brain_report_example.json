@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "hour": "2025-11-30_06"
+  },
+  "hour": "2025-11-30_06",
+  "aggregations_performed": 1,
+  "components_status": {
+    "dtm": "healthy",
+    "looping": "healthy",
+    "miners": "healthy",
+    "brainstem": "healthy"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "created_by": "Brainstem",
+    "version": "1.0"
+  },
+  "total_errors": 0,
+  "errors": [
+    {
+      "error_id": "brainstem_err_001",
+      "timestamp": "2025-11-30T01:00:00.000000Z",
+      "severity": "error",
+      "error_type": "folder_creation_failed",
+      "message": "Failed to create directory",
+      "context": {
+        "path": "/Mining/Miners/",
+        "permission_error": true
+      }
+    }
+  ]
+}

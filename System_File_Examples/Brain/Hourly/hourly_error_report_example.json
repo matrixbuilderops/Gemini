@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "hour": "2025-11-30_06",
+    "purpose": "Hourly error aggregation from all components"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "hour": "2025-11-30_06",
+  "total_errors": 3,
+  "errors_by_component": {
+    "brain": 1,
+    "brainstem": 0,
+    "dtm": 1,
+    "looping": 1,
+    "miners": 0
+  },
+  "errors_by_severity": {
+    "critical": 1,
+    "error": 1,
+    "warning": 1
+  },
+  "errors": [
+    {
+      "error_id": "loop_err_001",
+      "component": "Looping",
+      "severity": "critical",
+      "error_type": "submission_rejected",
+      "timestamp": "2025-11-30T06:00:05.000000Z",
+      "message": "Block rejected by network"
+    },
+    {
+      "error_id": "dtm_err_001",
+      "component": "DTM",
+      "severity": "error",
+      "error_type": "validation_failed",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "message": "Solution insufficient leading zeros"
+    },
+    {
+      "error_id": "brain_err_001",
+      "component": "Brain",
+      "severity": "warning",
+      "error_type": "aggregation_delay",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "message": "Component file not ready"
+    }
+  ]
+}

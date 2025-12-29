@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "file_type": "global_week_ledger",
+    "level": "week",
+    "year": "2025",
+    "month": "12",
+    "week": "W49",
+    "created": "2025-12-10T00:00:00.000000Z",
+    "last_updated": "2025-12-10T00:00:00.000000Z",
+    "mode": "production",
+    "component": "DTM",
+    "purpose": "Aggregates ALL entries for this week from all days/hours"
+  },
+  "hashes_this_week": 0,
+  "blocks_found_this_week": 0,
+  "total_attempts_this_week": 0,
+  "best_leading_zeros_this_week": 0,
+  "entries": []
+}

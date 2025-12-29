@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "version": "1.0"
+  },
+  "total_errors": 0,
+  "errors": [
+    {
+      "error_id": "dtm_err_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "severity": "error",
+      "error_type": "validation_failed",
+      "message": "Solution failed difficulty check",
+      "context": {
+        "block_hash": "0000001234...",
+        "leading_zeros": 15,
+        "required": 19,
+        "miner_id": "miner_002"
+      }
+    }
+  ]
+}

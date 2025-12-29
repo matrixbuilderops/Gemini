@@ -1,0 +1,11 @@
+Consensus mechanism
+Dynamic tempalte manger- should be notified that there is a soltuion form teh producion miner, once that happens it should compar ethe soltuion against the tempalte file to make sure it is valid if yes. then it makes the ldgers/math proof or updtes and also makes the submission file
+
+looping - it has a vonssensus mecahnsi that it verifies tha tthe submisson is acatully a good soltuion based off oteh tempalte fiel and makes sure that teh dyamci tempatel magner did its job, then it checks in with the brain.
+
+brain- does a consensuson the whole system makes sure teh sytem reprots are madke adn correct, erro reprots  same thign, allof the aggerated and aggerd idnex, ledgers, math proof, submission logs, global aggerated & index
+after evertying is godo teh looping file should be notified
+
+the looping file makes its submisson log file or updates an exsiting one and submis the submssion file to the bitoicn node
+
+brain run an addiontal consesu making sure tha tthe sumbsion lgos and the glboal ggerated and glboal aggeatde inex are good aftewards

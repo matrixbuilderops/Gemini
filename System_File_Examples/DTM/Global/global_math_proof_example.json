@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "purpose": "Mathematical proofs",
+    "version": "1.0"
+  },
+  "total_proofs": 0,
+  "total_blocks_proven": 0,
+  "proofs": [
+    {
+      "proof_id": "proof_20251130_060000_001",
+      "attempt_id": "attempt_20251130_060000_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "block_height": 870000,
+      "block_hash": "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+      "miner_id": "miner_001",
+      "hardware_attestation": {
+        "ip_address": "192.168.1.100",
+        "hostname": "mining-rig-01",
+        "mac_address": "00:1A:2B:3C:4D:5E"
+      },
+      "categories_applied": {
+        "families": "Knuth-Sorrellian-Class(BitLoad, 95, 425000)",
+        "lanes": "Knuth-Sorrellian-Class(BitLoad, 100, 650000)",
+        "strides": "Knuth-Sorrellian-Class(BitLoad, 92, 512000)",
+        "palette": "Knuth-Sorrellian-Class(BitLoad, 80, 156912)",
+        "sandbox": "Knuth-Sorrellian-Class(BitLoad, 80, 156912)"
+      },
+      "bitload": 208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909,
+      "verification_status": "verified"
+    }
+  ]
+}

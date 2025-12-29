@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "created_by": "ALL Miners",
+    "hour": "2025-11-30_06"
+  },
+  "hour": "2025-11-30_06",
+  "errors": [
+    {
+      "error_id": "miner_err_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "severity": "warning",
+      "error_type": "mining_timeout",
+      "message": "Nonce range exhausted",
+      "miner_id": "miner_003",
+      "hashes_tried": 10000000
+    }
+  ]
+}

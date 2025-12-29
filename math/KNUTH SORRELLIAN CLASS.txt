@@ -1,0 +1,33 @@
+KNUTH-SORRELLIAN-CLASS Mathematical System
+Class 1
+Class 1 introduces the foundation of the KNUTH-SORRELLIN-CLASS. It consists of three variables:
+- A: Base
+- B: Power (Base to the power of B)
+- C: Iteration count (how many times the entire problem is repeated)
+This class expands on traditional Knuth up-arrow notation by embedding iteration at a fundamental level.
+Class 2
+Class 2 is a 3-rotational recursive system:
+Rotation 1: 
+- New Base = Solution from Class 1
+- New Power = Previous Base
+- New Iteration = Previous Power
+
+Rotation 2 and 3 follow the same logic, recursively nesting each result. This increases computational complexity exponentially with each rotation.
+Class 3
+Class 3 adds a fourth variable – the number of Class 2 rotations (must be a multiple of 3).
+Each 'rotation group' simulates a higher-level iteration of Class 2 logic.
+This further escalates the scale, exponentially compounding the already expansive Class 2.
+Class 4
+Class 4 introduces mirroring through recursion and entropy.
+- Two simultaneous calculations: one recursive, one entropic.
+- These operate in mirrored, opposing directions.
+- The results are then 'folded' together using a compression-expansion logic analogous to folding a paper so tightly it bursts outward.
+This generates the Class 4 solution – a duality of collapse and expansion in numerical form.
+Class 5
+Class 5 loops through all previous classes using mirrored computations:
+- Begins with Class 4's solution.
+- Recursively mirrors backward: Class 4 → Class 3 → Class 2 → Class 1.
+- Each reversed calculation is performed.
+- All mirrored states are folded together.
+- Final folding of recursive and entropic components yields the Class 5 solution.
+This class represents a meta-synthesis of all prior levels, forming a closed recursive-entropic mathematical ecosystem.

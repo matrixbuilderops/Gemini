@@ -1,0 +1,3452 @@
+---
+# Singularity_Dave_Brain.QTL – canonical brain blueprint
+
+meta:
+  version: "3.2"
+  created: "2025-09-05"
+  updated: "2025-10-14"
+  status: "canonical"
+  description: "Brain of the system - Global orchestrator - Primary runtime blueprint consumed by the Brainstem, Looping orchestrator, and Dynamic Template Manager."
+  canonical_blueprint: "Singularity_Dave_Brain.QTL"
+  role: "Global orchestrator of the system"
+  function: "Brain of the system - coordinates all components"
+  legacy_aliases:
+    - "brain.qtl"
+  components:
+    - "Singularity_Dave_Brainstem_UNIVERSE_POWERED.py"
+    - "Singularity_Dave_Looping.py"
+    - "dynamic_template_manager.py"
+    - "production_bitcoin_miner.py"
+  sync:
+    math_file: "Interation 3.yaml"
+    config_file: "config.json"
+    last_math_update: "2025-10-13"
+
+# GLOBAL FLAG DEFINITIONS
+# All components learn their flags from here - ensures consistency
+flags:
+  description: "Global orchestrator flag definitions - all components use these"
+  philosophy: "Brain defines flags, components consume them - single source of truth"
+  
+  # MODE FLAGS - Control system behavior
+  mode_flags:
+    # PRODUCTION MODE: NO FLAG - Default when no other mode flags present
+    production:
+      flag: ""
+      description: "Production mode (default) - Real Bitcoin mining when no other mode flags specified"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: true
+      logic: "activated when --demo, --test, --staging flags are NOT present"
+    demo:
+      flag: "--demo"
+      description: "Demo mode with simulated mining (no real Bitcoin)"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: false
+    test:
+      flag: "--test"
+      description: "Test mode with limited attempts for validation"
+      applies_to: ["looping", "miner", "dtm"]
+      default: false
+    test_run:
+      flag: "--test-run"
+      type: "boolean"
+      description: "Execute single test run with validation output"
+      applies_to: ["looping", "miner", "dtm"]
+      default: false
+    staging:
+      flag: "--staging"
+      description: "Staging mode - final check before production (uses Mining/ folder)"
+      applies_to: ["looping", "miner", "dtm"]
+      default: false
+    smoke_test:
+      flag: "--smoke-test"
+      description: "Individual component smoke test"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: false
+    smoke_network:
+      flag: "--smoke-network"
+      description: "Comprehensive smoke test across all network components - tests DTM, system reports, error reports"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: false
+  
+  # MINING CONTROL FLAGS - Looping orchestrator
+  mining_control:
+    block_count:
+      flag: "--block"
+      type: "int"
+      description: "Mine N blocks per day (max 144)"
+      applies_to: ["looping"]
+      validation: "1-144"
+    block_random:
+      flag: "--block-random"
+      type: "boolean"
+      description: "Mine random number of blocks per day"
+      applies_to: ["looping"]
+    block_all:
+      flag: "--block-all"
+      type: "boolean"
+      description: "Mine continuously (all possible blocks)"
+      applies_to: ["looping"]
+    day_count:
+      flag: "--day"
+      type: "int"
+      description: "Run for N days"
+      applies_to: ["looping"]
+    day_all:
+      flag: "--day-all"
+      type: "boolean"
+      description: "Run forever (continuous operation)"
+      applies_to: ["looping"]
+    days_week:
+      flag: "--days-week"
+      type: "boolean"
+      description: "Mine for 1 week (7 days)"
+      applies_to: ["looping"]
+    days_month:
+      flag: "--days-month"
+      type: "boolean"
+      description: "Mine for 1 month"
+      applies_to: ["looping"]
+    days_6month:
+      flag: "--days-6month"
+      type: "boolean"
+      description: "Mine for 6 months"
+      applies_to: ["looping"]
+    days_year:
+      flag: "--days-year"
+      type: "boolean"
+      description: "Mine for 1 year (365 days)"
+      applies_to: ["looping"]
+  
+  # OPERATION MODE FLAGS - How miners operate
+  operation_modes:
+    continuous:
+      flag: "--continuous"
+      type: "choice"
+      choices: ["blocks", "day"] 
+      description: "Continuous mining: 'blocks' = run until all daily blocks complete, 'day' = run entire day until flag expires"
+      applies_to: ["looping", "miner"]
+      default: "blocks"
+    always_on:
+      flag: "--always-on"
+      type: "boolean"
+      description: "Always-on mode - miners stay running even AFTER flag conditions complete (4 days, 3 blocks, etc.)"
+      applies_to: ["looping"]
+      default: false
+    on_demand:
+      flag: "--on-demand"  
+      type: "boolean"
+      description: "On-demand mode - miners turn OFF after each block completion, Looping turns them back ON for next block"
+      applies_to: ["looping"]
+      default: false
+    sleep_miners:
+      flag: "--sleep-miners"
+      type: "boolean"
+      description: "Put all miners to sleep (suspend mining operations)"
+      applies_to: ["looping"]
+      default: false
+    wake_miners:
+      flag: "--wake-miners"
+      type: "boolean" 
+      description: "Wake up sleeping miners (resume mining operations)"
+      applies_to: ["looping"]
+      default: false
+  
+  # TERMINAL/EXECUTION FLAGS
+  execution_control:
+    daemon_mode:
+      flag: "--daemon-mode"
+      type: "boolean"
+      description: "Run in background daemon mode"
+      applies_to: ["looping", "miner"]
+      default: true
+    separate_terminal:
+      flag: "--separate-terminal"
+      type: "boolean"
+      description: "Run each miner in separate terminal"
+      applies_to: ["looping"]
+    terminal_id:
+      flag: "--terminal_id"
+      type: "string"
+      description: "Unique terminal ID for multi-daemon coordination"
+      applies_to: ["miner"]
+    miner_id:
+      flag: "--miner-id"
+      type: "int"
+      description: "Miner ID number (1-1000+) - generates MINER_001, etc."
+      applies_to: ["miner"]
+      validation: "1-9999"
+    max_daemons:
+      flag: "--max-daemons"
+      type: "int"
+      description: "Maximum number of parallel mining daemons (auto-detects hardware if not specified)"
+      applies_to: ["looping"]
+      validation: "1-64"
+      hardware_default: "cpu_cores"
+    coordination_file:
+      flag: "--coordination-file"
+      type: "string"
+      description: "Path to daemon coordination state file"
+      applies_to: ["looping"]
+    wallet_file:
+      flag: "--wallet-file"
+      type: "string"
+      description: "Path to wallet configuration file"
+      applies_to: ["looping", "miner"]
+  
+  # OUTPUT/DISPLAY FLAGS
+  display_control:
+    show_solutions_only:
+      flag: "--show_solutions_only"
+      type: "boolean"
+      description: "Show only valid solutions, no progress displays"
+      applies_to: ["miner"]
+      default: false
+    debug:
+      flag: "--debug"
+      type: "boolean"
+      description: "Enable debug logging"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: false
+    verbose:
+      flag: "--verbose"
+      type: "boolean"
+      description: "Enable verbose output"
+      applies_to: ["looping", "miner", "dtm"]
+      default: false
+    quiet:
+      flag: "--quiet"
+      type: "boolean"
+      description: "Minimal output only"
+      applies_to: ["looping", "miner"]
+      default: false
+  
+  # BRAIN.QTL INTEGRATION FLAGS
+  brain_integration:
+    brain_qtl:
+      flag: "--brain-qtl"
+      type: "boolean"
+      description: "Use Brain.QTL coordination system"
+      applies_to: ["looping", "miner", "dtm"]
+      default: true
+    brain_mode:
+      flag: "--brain-mode"
+      type: "string"
+      description: "Explicit brain mode override"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      choices: ["production", "demo", "test", "staging"]
+    mode:
+      flag: "--mode"
+      type: "choice"
+      choices: ["production", "demo", "test", "staging"]
+      description: "Explicit system mode selection"
+      applies_to: ["looping", "miner", "dtm", "brainstem"]
+      default: "production"
+  
+  # MINER-SPECIFIC FLAGS
+  miner_control:
+    max_attempts:
+      flag: "--max_attempts"
+      type: "int"
+      description: "Maximum mining attempts (for test/smoke modes)"
+      applies_to: ["miner"]
+    instruction:
+      flag: "--instruction"
+      type: "string"
+      description: "Path to mining instruction JSON file"
+      applies_to: ["miner"]
+    output:
+      flag: "--output"
+      type: "string"
+      description: "Path to output results JSON file"
+      applies_to: ["miner"]
+  
+  # COORDINATION FLAGS
+  coordination:
+    max_parallel_daemons:
+      flag: "--max-parallel-daemons"
+      type: "int"
+      description: "Maximum number of parallel mining daemons for coordination"
+      applies_to: ["looping"]
+      default: 10
+      validation: "1-1000"
+
+mathematical_framework:
+  universe_scale_parameters:
+    bitload: 208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909
+    cycles: 161
+    knuth_sorrellian_class_notation: "Knuth-Sorrellian-Class(208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909, 80, 156912)"
+    sync_source_file: "Interation 3.yaml"
+    sync_last_update: "2025-10-13"
+  base_knuth_parameters:
+    # ALL CATEGORIES USE SAME BASE VALUES
+    knuth_sorrellian_class_levels: 80
+    knuth_sorrellian_class_iterations: 156912
+    cycles: 161
+  modifier_knuth_parameters:
+    # EACH CATEGORY HAS DIFFERENT MODIFIER VALUES FOR SPECIALIZED LOGIC
+    families:
+      knuth_sorrellian_class_levels: 15
+      knuth_sorrellian_class_iterations: 268088
+      cycles: 64
+    lanes:
+      knuth_sorrellian_class_levels: 20
+      knuth_sorrellian_class_iterations: 493088
+      cycles: 114  
+    strides:
+      knuth_sorrellian_class_levels: 12
+      knuth_sorrellian_class_iterations: 355088
+      cycles: 159
+    palette:
+      knuth_sorrellian_class_levels: 0
+      knuth_sorrellian_class_iterations: 0
+      cycles: 0
+    sandbox:
+      knuth_sorrellian_class_levels: 0
+      knuth_sorrellian_class_iterations: 0  
+      cycles: 0
+  math_proofs:
+    math_problems:
+      description: "Goldbach Conjecture - Every even integer > 2 is sum of two primes"
+      proof_authority: "Singularity_Dave_Brainstem_UNIVERSE_POWERED"
+      verification_pipeline: "Looping → Dynamic Template Manager → Production Miner"
+
+folder_management:
+  base_paths:
+    root: .
+    test: ./Test
+    demo: ./Test/Demo
+    staging: ./Mining
+    live: ./Mining
+  auto_create_structure:
+  - Test/Test Mode/Mining
+  - Test/Test Mode/Mining/Ledgers
+  - Test/Test Mode/Mining/Ledgers/Aggregated
+  - Test/Test Mode/Mining/Ledgers/Aggregated_Index
+  - Test/Test Mode/Mining/Submission_Logs
+  - Test/Test Mode/Mining/Submission_Logs/Aggregated
+  - Test/Test Mode/Mining/Submission_Logs/Aggregated_Index
+  - Test/Test Mode/Mining/Temporary/Template
+  - Test/Test Mode/Mining/Temporary/User_Look_at
+  - Test/Test Mode/System
+  - Test/Test Mode/System/User_Look_at
+  - Test/Test Mode/System/System_Reports/Brain
+  - Test/Test Mode/System/System_Reports/Brainstem
+  - Test/Test Mode/System/System_Reports/DTM
+  - Test/Test Mode/System/System_Reports/Looping
+  - Test/Test Mode/System/System_Reports/Production_Miner
+  - Test/Test Mode/System/System_Reports/Aggregated
+  - Test/Test Mode/System/System_Reports/Aggregated_Index
+  - Test/Test Mode/System/Error_Reports/Brain
+  - Test/Test Mode/System/Error_Reports/Brainstem
+  - Test/Test Mode/System/Error_Reports/DTM
+  - Test/Test Mode/System/Error_Reports/Looping
+  - Test/Test Mode/System/Error_Reports/Production_Miner
+  - Test/Test Mode/System/Error_Reports/Aggregated
+  - Test/Test Mode/System/Error_Reports/Aggregated_Index
+  - Test/Test Mode/Global_Aggregated
+  - Test/Test Mode/Global_Aggregated/Aggregated
+  - Test/Test Mode/Global_Aggregated/Aggregated_Index
+  - Test/Demo/Mining
+  - Test/Demo/Mining/Ledgers
+  - Test/Demo/Mining/Ledgers/Aggregated
+  - Test/Demo/Mining/Ledgers/Aggregated_Index
+  - Test/Demo/Mining/Submission_Logs
+  - Test/Demo/Mining/Submission_Logs/Aggregated
+  - Test/Demo/Mining/Submission_Logs/Aggregated_Index
+  - Test/Demo/Mining/Temporary/Template
+  - Test/Demo/Mining/Temporary/User_Look_at
+  - Test/Demo/Mining/System
+  - Test/Demo/Mining/System/User_Look_at
+  - Test/Demo/Mining/System/System_Reports/Brain
+  - Test/Demo/Mining/System/System_Reports/Brainstem
+  - Test/Demo/Mining/System/System_Reports/DTM
+  - Test/Demo/Mining/System/System_Reports/Looping
+  - Test/Demo/Mining/System/System_Reports/Production_Miner
+  - Test/Demo/Mining/System/System_Reports/Aggregated
+  - Test/Demo/Mining/System/System_Reports/Aggregated_Index
+  - Test/Demo/Mining/System/Error_Reports/Brain
+  - Test/Demo/Mining/System/Error_Reports/Brainstem
+  - Test/Demo/Mining/System/Error_Reports/DTM
+  - Test/Demo/Mining/System/Error_Reports/Looping
+  - Test/Demo/Mining/System/Error_Reports/Production_Miner
+  - Test/Demo/Mining/System/Error_Reports/Aggregated
+  - Test/Demo/Mining/System/Error_Reports/Aggregated_Index
+  - Test/Demo/Mining/Global_Aggregated
+  - Test/Demo/Mining/Global_Aggregated/Aggregated
+  - Test/Demo/Mining/Global_Aggregated/Aggregated_Index
+  - Mining
+  - Mining/Ledgers
+  - Mining/Ledgers/Aggregated
+  - Mining/Ledgers/Aggregated_Index
+  - Mining/Submission_Logs
+  - Mining/Submission_Logs/Aggregated
+  - Mining/Submission_Logs/Aggregated_Index
+  - Mining/Temporary/Template
+  - Mining/Temporary/User_Look_at
+  - Mining/System
+  - Mining/System/System_Reports/Brain
+  - Mining/System/System_Reports/Brainstem
+  - Mining/System/System_Reports/DTM
+  - Mining/System/System_Reports/Looping
+  - Mining/System/System_Reports/Production_Miner
+  - Mining/System/System_Reports/Aggregated
+  - Mining/System/System_Reports/Aggregated_Index
+  - Mining/System/Error_Reports/Brain
+  - Mining/System/Error_Reports/Brainstem
+  - Mining/System/Error_Reports/DTM
+  - Mining/System/Error_Reports/Looping
+  - Mining/System/Error_Reports/Production_Miner
+  - Mining/System/Error_Reports/Aggregated
+  - Mining/System/Error_Reports/Aggregated_Index
+  - Mining/Global_Aggregated
+  - Mining/Global_Aggregated/Aggregated
+  - Mining/Global_Aggregated/Aggregated_Index
+  - System_File_Examples
+  - User_Look_at # Added User_Look_at folder at root for live/staging
+  hierarchical_folder_automation:
+    enabled: true
+    description: "Automatic time-based folder structure for fast queries and organization"
+    structure: "global → year → month → week → day → hour"
+    philosophy: "ONE FILE = EVERYTHING. Global files aggregate ALL child data for instant queries."
+    
+    # All ledger types that use hierarchical structure
+    # Each ledger type has BOTH reports AND errors (where applicable)
+    ledger_types:
+      # Primary ledgers - mining data
+      - name: "Ledgers"
+        reports: ["ledger", "math_proof"]
+        errors: false
+      - name: "Submission_Logs"
+        reports: ["submission_log"]
+        errors: false
+      - name: "System/System_Reports/Aggregated"
+        reports: ["aggregated_report"]
+        errors: ["aggregated_error"]
+      - name: "System/System_Errors/Aggregated"
+        reports: ["aggregated_error_report"]
+        errors: ["aggregated_error"]
+      - name: "Rejections"
+        reports: ["rejection"]
+        errors: false
+      
+      # System Reports - component performance (JSON)
+      - name: "System/System_Reports/Brain"
+        reports: ["brain_report", "system_report"]
+        errors: ["brain_error", "system_error"]
+      - name: "System/System_Reports/Brainstem"
+        reports: ["brainstem_report"]
+        errors: ["brainstem_error"]
+      - name: "System/System_Reports/DTM"
+        reports: ["dtm_report"]
+        errors: ["dtm_error"]
+      - name: "System/System_Reports/Looping"
+        reports: ["looping_report"]
+        errors: ["looping_error"]
+      - name: "System/System_Reports/Miners"
+        reports: ["miners_report"]
+        errors: ["miners_error"]
+      - name: "System/System_Reports/Aggregated"
+        reports: ["aggregated_report"]
+        errors: ["aggregated_error"]
+      
+      # System Logs - component logs (.log files)
+      - name: "System/System_Logs/Brain"
+        reports: ["brain"]
+        errors: false
+      - name: "System/System_Logs/Brainstem"
+        reports: ["brainstem"]
+        errors: false
+      - name: "System/System_Logs/DTM"
+        reports: ["dtm"]
+        errors: false
+      - name: "System/System_Logs/Looping"
+        reports: ["looping"]
+        errors: false
+      - name: "System/System_Logs/Miners"
+        reports: ["miners"]
+        errors: false
+      - name: "System/System_Logs/Aggregated"
+        reports: ["aggregated"]
+        errors: false
+    
+    # Base paths for each mode
+    base_paths:
+      production: "Mining"
+      demo: "Testing/Demo/Mining"
+      test: "Testing/Test/Mining"
+    
+    # Hierarchical pattern: NESTED time structure
+    # {base}/{category}/Aggregated/{YYYY}/{MM}/W{WW}/{DD}/{HH}/
+    # {base}/{category}/{YYYY}/yearly_{category}.json
+    # {base}/{category}/{YYYY}/{MM}/monthly_{category}.json
+    # etc. - each level contains aggregation file + child folders
+    pattern_levels:
+      # Global_Aggregated hierarchy - Brain creates these (sibling of Mining/, not child)
+      global_aggregated_year:
+        path: "{base}/Global_Aggregated/Aggregated/{YYYY}"
+        file: "aggregated_{YYYY}.json"
+        aggregates: "ALL system data from year across all categories"
+      global_aggregated_month:
+        path: "{base}/Global_Aggregated/Aggregated/{YYYY}/{MM}"
+        file: "aggregated_{MM}.json"
+        aggregates: "ALL system data from month"
+      global_aggregated_week:
+        path: "{base}/Global_Aggregated/Aggregated/{YYYY}/{MM}/W{WW}"
+        file: "aggregated_W{WW}.json"
+        aggregates: "ALL system data from week"
+      global_aggregated_day:
+        path: "{base}/Global_Aggregated/Aggregated/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "aggregated_{DD}.json"
+        aggregates: "ALL system data from day"
+      global_aggregated_hour:
+        path: "{base}/Global_Aggregated/Aggregated/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "aggregated_{HH}.json"
+        aggregates: "ALL system data from hour"
+      
+      # Global_Aggregated_Index
+      global_index_year:
+        path: "{base}/Global_Aggregated/Aggregated_Index/{YYYY}"
+        file: "aggregated_index_{YYYY}.json"
+      global_index_month:
+        path: "{base}/Global_Aggregated/Aggregated_Index/{YYYY}/{MM}"
+        file: "aggregated_index_{MM}.json"
+      global_index_week:
+        path: "{base}/Global_Aggregated/Aggregated_Index/{YYYY}/{MM}/W{WW}"
+        file: "aggregated_index_W{WW}.json"
+      global_index_day:
+        path: "{base}/Global_Aggregated/Aggregated_Index/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "aggregated_index_{DD}.json"
+      global_index_hour:
+        path: "{base}/Global_Aggregated/Aggregated_Index/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "aggregated_index_{HH}.json"
+      
+      # Aggregated and Aggregated_Index follow same nested pattern
+      aggregated_year:
+        path: "{base}/{category}/Aggregated/{YYYY}"
+        file: "yearly_aggregated_{category}.json"
+        aggregates: "ALL data from year aggregated across all months"
+      aggregated_month:
+        path: "{base}/{category}/Aggregated/{YYYY}/{MM}"
+        file: "monthly_aggregated_{category}.json"
+        aggregates: "ALL data from month aggregated across all weeks"
+      aggregated_week:
+        path: "{base}/{category}/Aggregated/{YYYY}/{MM}/W{WW}"
+        file: "weekly_aggregated_{category}.json"
+        aggregates: "ALL data from week aggregated across all days"
+      aggregated_day:
+        path: "{base}/{category}/Aggregated/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "daily_aggregated_{category}.json"
+        aggregates: "ALL data from day aggregated across all hours"
+      aggregated_hour:
+        path: "{base}/{category}/Aggregated/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "hourly_aggregated_{category}.json"
+        aggregates: "Hourly aggregated data"
+      
+      # Aggregated_Index follows same pattern with index files
+      index_year:
+        path: "{base}/{category}/Aggregated_Index/{YYYY}"
+        file: "yearly_index_{category}.json"
+      index_month:
+        path: "{base}/{category}/Aggregated_Index/{YYYY}/{MM}"
+        file: "monthly_index_{category}.json"
+      index_week:
+        path: "{base}/{category}/Aggregated_Index/{YYYY}/{MM}/W{WW}"
+        file: "weekly_index_{category}.json"
+      index_day:
+        path: "{base}/{category}/Aggregated_Index/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "daily_index_{category}.json"
+      index_hour:
+        path: "{base}/{category}/Aggregated_Index/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "hourly_index_{category}.json"
+      
+      # Component folders (Brain, Brainstem, Looping, DTM, Production_Miner) follow nested time pattern
+      component_year:
+        path: "{base}/System/{report_type}/{component}/{YYYY}"
+        file: "yearly_{report_type}_{component}.json"
+      component_month:
+        path: "{base}/System/{report_type}/{component}/{YYYY}/{MM}"
+        file: "monthly_{report_type}_{component}.json"
+      component_week:
+        path: "{base}/System/{report_type}/{component}/{YYYY}/{MM}/W{WW}"
+        file: "weekly_{report_type}_{component}.json"
+      component_day:
+        path: "{base}/System/{report_type}/{component}/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "daily_{report_type}_{component}.json"
+      component_hour:
+        path: "{base}/System/{report_type}/{component}/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "hourly_{report_type}_{component}.json"
+      
+      # Ledgers have nested year/month/week/day/hour with files at EACH level
+      ledger_year:
+        path: "{base}/Ledgers/{YYYY}"
+        files: ["yearly_ledger.json", "yearly_math_proof.json"]
+      ledger_month:
+        path: "{base}/Ledgers/{YYYY}/{MM}"
+        files: ["monthly_ledger.json", "monthly_math_proof.json"]
+      ledger_week:
+        path: "{base}/Ledgers/{YYYY}/{MM}/W{WW}"
+        files: ["weekly_ledger.json", "weekly_math_proof.json"]
+      ledger_day:
+        path: "{base}/Ledgers/{YYYY}/{MM}/W{WW}/{DD}"
+        files: ["daily_ledger.json", "daily_math_proof.json"]
+      ledger_hour:
+        path: "{base}/Ledgers/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        files: ["hourly_ledger.json", "hourly_math_proof.json"]
+      
+      # Submission_Logs follow same nested pattern
+      submission_year:
+        path: "{base}/Submission_Logs/{YYYY}"
+        file: "yearly_submission.json"
+      submission_month:
+        path: "{base}/Submission_Logs/{YYYY}/{MM}"
+        file: "monthly_submission.json"
+      submission_week:
+        path: "{base}/Submission_Logs/{YYYY}/{MM}/W{WW}"
+        file: "weekly_submission.json"
+      submission_day:
+        path: "{base}/Submission_Logs/{YYYY}/{MM}/W{WW}/{DD}"
+        file: "daily_submission.json"
+      submission_hour:
+        path: "{base}/Submission_Logs/{YYYY}/{MM}/W{WW}/{DD}/{HH}"
+        file: "hourly_submission.json"
+    
+    # Rollup behavior - HOW global files aggregate data
+    rollup_strategy:
+      mode: "append_with_summary"
+      description: "Each global file contains ALL entries plus summary statistics"
+      global_updates: "Every write updates ALL parent global files"
+      summary_fields: ["total_entries", "date_range", "last_updated"]
+    
+    auto_create_current: true
+    auto_create_on_write: true
+
+# BRAIN UNIVERSAL FILE SYSTEM - All components use these functions
+brain_file_system:
+  description: "Brain-controlled file/folder operations. All components import from Brainstem."
+  
+  # Python functions that Brainstem compiles and exports
+  functions: |
+    import json
+    from datetime import datetime, timedelta
+    from pathlib import Path
+    
+    # Global mode storage (set by component on init)
+    _BRAIN_MODE = "live"
+    _BRAIN_COMPONENT = "unknown"
+    
+    def brain_set_mode(mode, component):
+        """Set current mode and component. Call this in __init__."""
+        global _BRAIN_MODE, _BRAIN_COMPONENT
+        _BRAIN_MODE = mode
+        _BRAIN_COMPONENT = component
+    
+    def brain_get_base_path():
+        """Get base path for current mode."""
+        mode_paths = {
+            "demo": "Test/Demo/Mining",
+            "test": "Test/Test mode/Mining",
+            "sandbox": "Mining",
+            "live": "Mining"
+        }
+        return mode_paths.get(_BRAIN_MODE, "Mining")
+    
+    def brain_create_folder(folder_path, component=None):
+        """Create folder following Brain rules."""
+        try:
+            p = Path(folder_path)
+            p.mkdir(parents=True, exist_ok=True)
+            return str(p)
+        except Exception as e:
+            print(f"Brain folder creation failed {folder_path}: {e}")
+            return None
+    
+    def brain_create_file(file_path, data, file_type="json", component=None):
+        """Create file with Brain metadata."""
+        comp = component or _BRAIN_COMPONENT
+        try:
+            p = Path(file_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            
+            if file_type == "json":
+                if isinstance(data, dict):
+                    data["_brain_metadata"] = {
+                        "created": datetime.now().isoformat(),
+                        "component": comp,
+                        "mode": _BRAIN_MODE
+                    }
+                with open(p, 'w') as f:
+                    json.dump(data, f, indent=2)
+            else:
+                with open(p, 'w') as f:
+                    f.write(str(data))
+            return str(p)
+        except Exception as e:
+            print(f"Brain file creation failed {file_path}: {e}")
+            return None
+    
+    def brain_write_hierarchical(entry_data, base_dir, file_type="ledger", component=None):
+        """Write to all hierarchical time levels."""
+        comp = component or _BRAIN_COMPONENT
+        now = datetime.now()
+        year, month, day, hour = str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}"
+        week = f"W{now.strftime('%W')}"
+        
+        bp = Path(base_dir)
+        yd = bp / year
+        md = yd / month
+        wd = md / week
+        dd = md / day
+        hd = dd / hour
+        
+        results = {}
+        
+        # Create all directories
+        for d in [yd, md, wd, dd, hd]:
+            d.mkdir(parents=True, exist_ok=True)
+        
+        # Write to each level
+        levels = [
+            ("year", yd, f"global_{year}.json"),
+            ("month", md, f"global_{month}.json"),
+            ("week", wd, f"global_{week}.json"),
+            ("day", dd, f"global_{day}.json")
+        ]
+        
+        for level_name, dir_path, filename in levels:
+            file_path = dir_path / filename
+            try:
+                if file_path.exists():
+                    with open(file_path, 'r') as f:
+                        data = json.load(f)
+                else:
+                    data = {
+                        "entries": [],
+                        "metadata": {
+                            "created": now.isoformat(),
+                            "component": comp,
+                            "level": level_name
+                        }
+                    }
+                
+                data["entries"].append(entry_data)
+                data["metadata"]["last_updated"] = now.isoformat()
+                data["metadata"]["total_entries"] = len(data["entries"])
+                
+                with open(file_path, 'w') as f:
+                    json.dump(data, f, indent=2)
+                results[level_name] = {"success": True, "path": str(file_path)}
+            except Exception as e:
+                results[level_name] = {"success": False, "error": str(e)}
+        
+        # Create REPORT.txt
+        try:
+            report_lines = [
+                "=" * 80,
+                f"HOURLY REPORT - {now.strftime('%Y-%m-%d %H:00')}",
+                "5×UNIVERSE-SCALE MATHEMATICAL FRAMEWORK",
+                "=" * 80,
+                "",
+                f"Component: {comp}",
+                f"Mode: {_BRAIN_MODE}",
+                f"Timestamp: {entry_data.get('timestamp', 'N/A')}",
+                f"Block Hash: {str(entry_data.get('block_hash', 'N/A'))[:32]}...",
+                f"Nonce: {entry_data.get('nonce', 'N/A')}",
+                f"Miner: {entry_data.get('miner_id', 'N/A')}",
+                "",
+                "=" * 80
+            ]
+            with open(hd / "REPORT.txt", 'w') as f:
+                f.write("\n".join(report_lines))
+            results["report"] = {"success": True, "path": str(hd / "REPORT.txt")}
+        except Exception as e:
+            results["report"] = {"success": False, "error": str(e)}
+        
+        return results
+    
+    def brain_get_path(file_type, component=None):
+        """Get correct path for file type in current mode."""
+        comp = component or _BRAIN_COMPONENT
+        base = brain_get_base_path()
+        
+        path_map = {
+            "ledger": f"{base}/Ledgers",
+          "submission": f"{base}/Submission_Logs",
+            "math_proof": f"{base}/Math_Proofs",
+            "rejection": f"{base}/Rejections",
+            "system_report": f"{base}/System/System_Reports/{comp}",
+            "error_report": f"{base}/System/Error_Reports/{comp}",
+            "system_log": f"{base}/System/System_Logs/{comp}",
+            "template": f"{base}/Temporary/Template"
+        }
+        
+        return path_map.get(file_type, f"{base}/Unknown")
+    
+    # ARCHIVE ROLLUP SYSTEM
+    # Create archive files when time periods end
+    
+    def brain_rollup_day(base_dir, file_type, component=None):
+        """Create day archive when day ends - collects all hours"""
+        from pathlib import Path
+        comp = component or _BRAIN_COMPONENT
+        
+        try:
+            yesterday = datetime.now() - timedelta(days=1)
+            year = f"{yesterday.year:04d}"
+            month = f"{yesterday.month:02d}"
+            day = f"{yesterday.day:02d}"
+            
+            base_path = Path(base_dir)
+            day_path = base_path / year / month / day
+            
+            if not day_path.exists():
+                return {"success": False, "error": "Day path does not exist"}
+            
+            # Collect all hourly data
+            hourly_data = []
+            for hour_folder in sorted(day_path.glob("*")):
+                if hour_folder.is_dir():
+                    hourly_file = hour_folder / f"hourly_{file_type}.json"
+                    if hourly_file.exists():
+                        with open(hourly_file, 'r') as f:
+                            hourly_data.append(json.load(f))
+            
+            # Create day archive
+            day_archive = {
+                "metadata": {
+                    "file_type": f"day_archive_{file_type}",
+                    "component": comp,
+                    "date": f"{year}-{month}-{day}",
+                    "created": datetime.now().isoformat(),
+                    "hours_included": len(hourly_data)
+                },
+                "entries": hourly_data
+            }
+            
+            archive_file = day_path / f"global_{day}.json"
+            with open(archive_file, 'w') as f:
+                json.dump(day_archive, f, indent=2)
+            
+            return {"success": True, "path": str(archive_file), "hours": len(hourly_data)}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def brain_rollup_week(base_dir, file_type, component=None):
+        """Create week archive when week ends - collects all days"""
+        from pathlib import Path
+        comp = component or _BRAIN_COMPONENT
+        
+        try:
+            last_week = datetime.now() - timedelta(days=7)
+            year = f"{last_week.year:04d}"
+            month = f"{last_week.month:02d}"
+            week = f"W{last_week.strftime('%W')}"
+            
+            base_path = Path(base_dir)
+            week_path = base_path / year / month / week
+            
+            if not week_path.exists():
+                return {"success": False, "error": "Week path does not exist"}
+            
+            # Collect all daily archives
+            daily_data = []
+            for day_folder in sorted(week_path.parent.glob("*")):
+                if day_folder.is_dir() and not day_folder.name.startswith("W"):
+                    day_archive = day_folder / f"global_{day_folder.name}.json"
+                    if day_archive.exists():
+                        with open(day_archive, 'r') as f:
+                            daily_data.append(json.load(f))
+            
+            # Create week archive
+            week_archive = {
+                "metadata": {
+                    "file_type": f"week_archive_{file_type}",
+                    "component": comp,
+                    "week": week,
+                    "year": year,
+                    "month": month,
+                    "created": datetime.now().isoformat(),
+                    "days_included": len(daily_data)
+                },
+                "entries": daily_data
+            }
+            
+            archive_file = week_path / f"global_{week}.json"
+            week_path.mkdir(parents=True, exist_ok=True)
+            with open(archive_file, 'w') as f:
+                json.dump(week_archive, f, indent=2)
+            
+            return {"success": True, "path": str(archive_file), "days": len(daily_data)}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def brain_rollup_month(base_dir, file_type, component=None):
+        """Create month archive when month ends - collects all weeks/days"""
+        from pathlib import Path
+        comp = component or _BRAIN_COMPONENT
+        
+        try:
+            last_month = datetime.now() - timedelta(days=30)
+            year = f"{last_month.year:04d}"
+            month = f"{last_month.month:02d}"
+            
+            base_path = Path(base_dir)
+            month_path = base_path / year / month
+            
+            if not month_path.exists():
+                return {"success": False, "error": "Month path does not exist"}
+            
+            # Collect all weekly and daily archives
+            period_data = []
+            for item in sorted(month_path.glob("*")):
+                if item.is_dir():
+                    archive_file = item / f"global_{item.name}.json"
+                    if archive_file.exists():
+                        with open(archive_file, 'r') as f:
+                            period_data.append(json.load(f))
+            
+            # Create month archive
+            month_archive = {
+                "metadata": {
+                    "file_type": f"month_archive_{file_type}",
+                    "component": comp,
+                    "year": year,
+                    "month": month,
+                    "created": datetime.now().isoformat(),
+                    "periods_included": len(period_data)
+                },
+                "entries": period_data
+            }
+            
+            archive_file = month_path / f"global_{month}.json"
+            with open(archive_file, 'w') as f:
+                json.dump(month_archive, f, indent=2)
+            
+            return {"success": True, "path": str(archive_file), "periods": len(period_data)}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def brain_rollup_year(base_dir, file_type, component=None):
+        """Create year archive when year ends - collects all months"""
+        from pathlib import Path
+        comp = component or _BRAIN_COMPONENT
+        
+        try:
+            last_year = datetime.now() - timedelta(days=365)
+            year = f"{last_year.year:04d}"
+            
+            base_path = Path(base_dir)
+            year_path = base_path / year
+            
+            if not year_path.exists():
+                return {"success": False, "error": "Year path does not exist"}
+            
+            # Collect all monthly archives
+            monthly_data = []
+            for month_folder in sorted(year_path.glob("*")):
+                if month_folder.is_dir():
+                    month_archive = month_folder / f"global_{month_folder.name}.json"
+                    if month_archive.exists():
+                        with open(month_archive, 'r') as f:
+                            monthly_data.append(json.load(f))
+            
+            # Create year archive
+            year_archive = {
+                "metadata": {
+                    "file_type": f"year_archive_{file_type}",
+                    "component": comp,
+                    "year": year,
+                    "created": datetime.now().isoformat(),
+                    "months_included": len(monthly_data)
+                },
+                "entries": monthly_data
+            }
+            
+            archive_file = year_path / f"global_{year}.json"
+            with open(archive_file, 'w') as f:
+                json.dump(year_archive, f, indent=2)
+            
+            return {"success": True, "path": str(archive_file), "months": len(monthly_data)}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+  # BRAIN FLAG-BASED FOLDER COORDINATION
+  flag_mode_mapping:
+    demo_mode:
+      flag: "--demo"
+      base_path: "Testing/Demo"
+      temporary_template: "Testing/Demo/Mining/Temporary/Template"
+      ledgers: "Testing/Demo/Mining/Ledgers"
+      environment_key: "Testing/Demo"
+      # Stock template for demo mode - canonical Bitcoin template
+      stock_template:
+        version: 536870912
+        height: 999999
+        bits: "1d00ffff"
+        previousblockhash: "0000000000000000000000000000000000000000000000000000000000000000"
+        transactions: []
+        coinbase_value: 625000000
+        target: "00000000ffff0000000000000000000000000000000000000000000000000000"
+        note: "Canonical stock template for demo mode - defined by Brain.QTL"
+    test_mode:
+      flag: "--test"
+      base_path: "Testing/Test"
+      temporary_template: "Testing/Test/Mining/Temporary/Template"
+      ledgers: "Testing/Test/Mining/Ledgers"
+      environment_key: "Testing/Test"
+    production_mode:
+      flag: "none"
+      base_path: "Mining"
+      temporary_template: "Mining/Temporary/Template"
+      ledgers: "Mining/Ledgers"
+      environment_key: "Mining"
+
+  # COMPREHENSIVE UNDERSTANDING SYSTEM
+  understanding_files:
+    comprehensive:
+      - "brainstem_comprehensive_understanding.md"
+      - "looping_comprehensive_understanding.md"
+      - "dynamic_template_manager_comprehensive_understanding.md"
+      - "production_miner_comprehensive_understanding.md"
+      - "iteration_comprehensive_understanding.md"
+      - "Comprehensive_config.md"
+      - "Brain 1.instructions.md"
+    dynamic:
+      - "brain_dynamic_understanding.md"
+      - "brainstem_dynamic_understanding.md"
+      - "looping_dynamic_understanding.md"
+      - "dynamic_template_manager_dynamic_understanding.md"
+      - "production_miner_dynamic_understanding.md"
+      - "iteration_dynamic_understanding.md"
+      - "config_dynamic_understanding.md"
+
+  ledger_system:
+    base_path: "./Mining/Ledgers"
+    folders:
+      global: "./Mining/Ledgers"
+      hourly_base: "./Mining/Ledgers"
+      hourly_stub: "./Mining/Ledgers"
+      submission_logs: "./Mining/Submission_Logs"
+      submission_logs_global: "./Mining/Submission_Logs"
+    files:
+      global:
+        - "global_ledger.json"
+        - "global_math_proof.json"
+      hourly:
+        - "hourly_ledger.json"
+        - "hourly_math_proof.json"
+    submission_logs_files:
+      global:
+        - "global_submission_log.json"
+      hourly:
+        - "hourly_submission_log.json"
+    hourly_folder_pattern: "YYYY/MM/W{WW}/{DD}/{HH}"
+    legacy_hourly_pattern: "YYYY/MM/DD/Hourly"
+    file_format: "json"
+    append_mode: true
+
+
+
+
+system_example_files:
+  # Brain.QTL defines ALL example file structures
+  # Brainstem reads this section and generates the example files
+  # Each component has its own folder with Global/ and Hourly/ subfolders
+  # Components read from System_File_Examples/{ComponentName}/Global/ or /Hourly/
+  enabled: true
+  generation_trigger: "on_brain_initialization"
+  base_location: "System_File_Examples/"
+  
+  brain_examples:
+    # Brain Component - Orchestration & Aggregation
+    global_system_report:
+      filename: "Brain/Global/global_system_report_example.json"
+      created_by: "Brain"
+      purpose: "AGGREGATED summary of ALL components - read THIS instead of 5 files"
+      structure:
+        metadata: {created_by: "Brain", purpose: "Master aggregation from all components", version: "1.0"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        last_aggregation: "2025-11-30T06:00:00.000000Z"
+        system_status: "OPERATIONAL"
+        total_blocks_found: 3
+        total_submissions: 3
+        total_hashes: 150000000000
+        components: {
+          brain: {status: "healthy", orchestrations: 150, aggregations: 150, last_update: "2025-11-30T06:00:00Z"},
+          brainstem: {status: "healthy", initializations: 1, folders_created: 150, files_generated: 31, last_update: "2025-11-30T01:00:00Z"},
+          dtm: {status: "healthy", templates_processed: 150, validations: 3, solutions_found: 3, last_update: "2025-11-30T06:00:00Z"},
+          looping: {status: "healthy", mining_sessions: 50, submissions: 3, accepted: 3, rejected: 0, last_update: "2025-11-30T06:00:05Z"},
+          miners: {status: "healthy", active_miners: 5, total_hashes: 150000000000, blocks_found: 3, average_hash_rate: 1250000, last_update: "2025-11-30T06:00:00Z"}
+        }
+        performance_summary: {
+          uptime_hours: 240,
+          blocks_per_hour: 0.0125,
+          average_system_hash_rate: 1250000
+        }
+        hourly_summaries: [
+          {
+            hour: "2025-11-30_06",
+            blocks_found: 1,
+            hashes: 7500000,
+            submissions: 1,
+            system_status: "OPERATIONAL"
+          }
+        ]
+    
+    global_error_report:
+      filename: "Brain/Global/global_error_report_example.json"
+      created_by: "Brain"
+      purpose: "AGGREGATED summary of ALL errors - read THIS instead of 5 files"
+      structure:
+        metadata: {created_by: "Brain", purpose: "Master error aggregation from all components", version: "1.0"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        last_aggregation: "2025-11-30T06:00:05.000000Z"
+        total_errors: 5
+        errors_by_component: {brain: 1, brainstem: 1, dtm: 1, looping: 1, miners: 1}
+        errors_by_severity: {critical: 1, error: 2, warning: 2}
+        errors_by_type: {submission_rejected: 1, validation_failed: 1, mining_timeout: 1, aggregation_delay: 1, folder_creation_failed: 1}
+        recent_errors: [
+          {
+            error_id: "loop_err_001",
+            component: "Looping",
+            severity: "critical",
+            error_type: "submission_rejected",
+            timestamp: "2025-11-30T06:00:05.000000Z",
+            message: "Bitcoin Core rejected block submission"
+          },
+          {
+            error_id: "dtm_err_001",
+            component: "DTM",
+            severity: "error",
+            error_type: "validation_failed",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            message: "Solution failed difficulty check"
+          }
+        ]
+    
+    global_brain_report:
+      filename: "Brain/Global/global_brain_report_example.json"
+      created_by: "Brain"
+      purpose: "Brain's orchestration history"
+      structure:
+        metadata: {created_by: "Brain", version: "1.0"}
+        total_orchestrations: 150
+        total_aggregations: 150
+        reports: [
+          {
+            report_id: "brain_report_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            components_aggregated: 5,
+            files_processed: 20
+          }
+        ]
+    
+    global_brain_error:
+      filename: "Brain/Global/global_brain_error_example.json"
+      created_by: "Brain"
+      structure:
+        metadata: {created_by: "Brain", version: "1.0"}
+        total_errors: 0
+        errors: [
+          {
+            error_id: "brain_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "warning",
+            component: "Brain",
+            error_type: "aggregation_delay",
+            message: "Component file not ready for aggregation",
+            context: {file: "dtm_report.json", retry_count: 1}
+          }
+        ]
+    
+    flags_example:
+      filename: "Brain/Global/flags_example.json"
+      created_by: "Brain"
+      purpose: "MASTER FLAG LIST - Looping reads this to build CLI dynamically"
+      structure:
+        metadata: {created_by: "Brain", purpose: "Dynamic CLI flag definitions", version: "1.0"}
+        categories:
+          mode_flags:
+            demo: {flag: "--demo", description: "Demo mode with simulated mining"}
+            test: {flag: "--test-mode", description: "Test mode with limited attempts"}
+            staging: {flag: "--staging", description: "Staging mode (final check)"}
+          mining_control:
+            block: {flag: "--block", type: "int", description: "Mine N blocks per day"}
+            block_random: {flag: "--block-random", type: "boolean", description: "Mine random blocks"}
+            day: {flag: "--day", type: "int", description: "Run for N days"}
+            block_all: {flag: "--block-all", type: "boolean", description: "Mine continuously"}
+            day_all: {flag: "--day-all", type: "boolean", description: "Mine continuously until day ends"}
+          operation_modes:
+            continuous: {flag: "--continuous", type: "choice", choices: ["blocks", "day"], description: "Continuous mode type"}
+            always_on: {flag: "--always-on", type: "boolean", description: "Stay running after completion"}
+            on_demand: {flag: "--on-demand", type: "boolean", description: "Wake up per block"}
+          execution_control:
+            daemon_mode: {flag: "--daemon-mode", type: "boolean", description: "Run in background", default: true}
+            max_daemons: {flag: "--max-daemons", type: "int", description: "Parallel miner count"}
+          display_control:
+            verbose: {flag: "--verbose", type: "boolean", description: "Show detailed output"}
+            debug: {flag: "--debug", type: "boolean", description: "Enable debug logs"}
+    
+    hourly_system_report:
+      filename: "Brain/Hourly/hourly_system_report_example.json"
+      created_by: "Brain"
+      purpose: "AGGREGATED hourly summary of ALL components"
+      structure:
+        metadata: {created_by: "Brain", hour: "2025-11-30_06", purpose: "Hourly aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        hour: "2025-11-30_06"
+        system_status: "OPERATIONAL"
+        blocks_found: 1
+        total_hashes: 7500000
+        submissions: 1
+        components: {
+          brain: {aggregations_performed: 1, status: "healthy"},
+          brainstem: {folders_created: 0, files_validated: 31, status: "healthy"},
+          dtm: {templates_processed: 1, solutions_validated: 1, status: "healthy"},
+          looping: {mining_sessions: 1, templates_distributed: 1, submissions: 1, status: "healthy"},
+          miners: {active_miners: 5, total_hashes: 7500000, average_hash_rate: 1250000, status: "healthy"}
+        }
+    
+    hourly_error_report:
+      filename: "Brain/Hourly/hourly_error_report_example.json"
+      created_by: "Brain"
+      purpose: "AGGREGATED hourly error summary"
+      structure:
+        metadata: {created_by: "Brain", hour: "2025-11-30_06", purpose: "Hourly error aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        hour: "2025-11-30_06"
+        total_errors: 3
+        errors_by_component: {brain: 1, brainstem: 0, dtm: 1, looping: 1, miners: 0}
+        errors_by_severity: {critical: 1, error: 1, warning: 1}
+        errors: [
+          {
+            error_id: "loop_err_001",
+            component: "Looping",
+            severity: "critical",
+            error_type: "submission_rejected",
+            timestamp: "2025-11-30T06:00:05.000000Z",
+            message: "Block rejected by network"
+          },
+          {
+            error_id: "dtm_err_001",
+            component: "DTM",
+            severity: "error",
+            error_type: "validation_failed",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            message: "Solution insufficient leading zeros"
+          },
+          {
+            error_id: "brain_err_001",
+            component: "Brain",
+            severity: "warning",
+            error_type: "aggregation_delay",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            message: "Component file not ready"
+          }
+        ]
+    
+    hourly_brain_report:
+      filename: "Brain/Hourly/hourly_brain_report_example.json"
+      created_by: "Brain"
+      structure:
+        metadata: {created_by: "Brain", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        aggregations_performed: 1
+        components_status: {dtm: "healthy", looping: "healthy", miners: "healthy", brainstem: "healthy"}
+    
+    hourly_brain_error:
+      filename: "Brain/Hourly/hourly_brain_error_example.json"
+      created_by: "Brain"
+      structure:
+        metadata: {created_by: "Brain", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        errors: [
+          {
+            error_id: "brain_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "warning",
+            error_type: "aggregation_delay",
+            message: "Component file not ready",
+            resolved: true
+          }
+        ]
+    
+    # Year-level Brain examples
+    year_brain_report:
+      filename: "Brain/Year/year_brain_report_example.json"
+      created_by: "Brain"
+      purpose: "Brain orchestration reports for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025", purpose: "Year-level Brain orchestration tracking"}
+        total_orchestrations: 0
+        total_aggregations: 0
+        months_active: 0
+        year: "2025"
+        reports: []
+    
+    year_brain_error:
+      filename: "Brain/Year/year_brain_error_example.json"
+      created_by: "Brain"
+      purpose: "Brain errors for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025"}
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        year: "2025"
+        errors: []
+    
+    year_system_report:
+      filename: "Brain/Year/year_system_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025", purpose: "Year-level system aggregation"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        year: "2025"
+        total_blocks_found: 0
+        total_submissions: 0
+        reports: []
+    
+    year_error_report:
+      filename: "Brain/Year/year_error_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated error reports for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        year: "2025"
+        total_errors: 0
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        errors: []
+    
+    # Month-level Brain examples
+    month_brain_report:
+      filename: "Brain/Month/month_brain_report_example.json"
+      created_by: "Brain"
+      purpose: "Brain orchestration reports for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12", purpose: "Month-level Brain orchestration tracking"}
+        total_orchestrations: 0
+        total_aggregations: 0
+        days_active: 0
+        month: "12"
+        reports: []
+    
+    month_brain_error:
+      filename: "Brain/Month/month_brain_error_example.json"
+      created_by: "Brain"
+      purpose: "Brain errors for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12"}
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        month: "12"
+        errors: []
+    
+    month_system_report:
+      filename: "Brain/Month/month_system_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12", purpose: "Month-level system aggregation"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        month: "12"
+        total_blocks_found: 0
+        total_submissions: 0
+        reports: []
+    
+    month_error_report:
+      filename: "Brain/Month/month_error_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated error reports for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        month: "12"
+        total_errors: 0
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        errors: []
+    
+    # Week-level Brain examples
+    week_brain_report:
+      filename: "Brain/Week/week_brain_report_example.json"
+      created_by: "Brain"
+      purpose: "Brain orchestration reports for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50", purpose: "Week-level Brain orchestration tracking"}
+        total_orchestrations: 0
+        total_aggregations: 0
+        week: "W50"
+        reports: []
+    
+    week_brain_error:
+      filename: "Brain/Week/week_brain_error_example.json"
+      created_by: "Brain"
+      purpose: "Brain errors for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50"}
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        week: "W50"
+        errors: []
+    
+    week_system_report:
+      filename: "Brain/Week/week_system_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50", purpose: "Week-level system aggregation"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        week: "W50"
+        total_blocks_found: 0
+        total_submissions: 0
+        reports: []
+    
+    week_error_report:
+      filename: "Brain/Week/week_error_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated error reports for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        week: "W50"
+        total_errors: 0
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        errors: []
+    
+    # Day-level Brain examples
+    day_brain_report:
+      filename: "Brain/Day/day_brain_report_example.json"
+      created_by: "Brain"
+      purpose: "Brain orchestration reports for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12", purpose: "Day-level Brain orchestration tracking"}
+        total_orchestrations: 0
+        total_aggregations: 0
+        hours_active: 0
+        day: "12"
+        reports: []
+    
+    day_brain_error:
+      filename: "Brain/Day/day_brain_error_example.json"
+      created_by: "Brain"
+      purpose: "Brain errors for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12"}
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        day: "12"
+        errors: []
+    
+    day_system_report:
+      filename: "Brain/Day/day_system_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12", purpose: "Day-level system aggregation"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        day: "12"
+        total_blocks_found: 0
+        total_submissions: 0
+        reports: []
+    
+    day_error_report:
+      filename: "Brain/Day/day_error_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated error reports for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        day: "12"
+        total_errors: 0
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        errors: []
+  
+  brainstem_examples:
+    # Brainstem Component - Infrastructure Creation
+    global_brainstem_report:
+      filename: "Brainstem/Global/global_brainstem_report_example.json"
+      created_by: "Brainstem"
+      purpose: "Infrastructure creation history"
+      structure:
+        metadata: {created_by: "Brainstem", version: "1.0"}
+        total_initializations: 1
+        folders_created: 150
+        files_generated: 31
+        reports: [
+          {
+            report_id: "brainstem_report_001",
+            timestamp: "2025-11-30T01:00:00.000000Z",
+            infrastructure_created: true,
+            folders: 150,
+            examples_generated: 31
+          }
+        ]
+    
+    global_brainstem_error:
+      filename: "Brainstem/Global/global_brainstem_error_example.json"
+      created_by: "Brainstem"
+      structure:
+        metadata: {created_by: "Brainstem", version: "1.0"}
+        total_errors: 0
+        errors: [
+          {
+            error_id: "brainstem_err_001",
+            timestamp: "2025-11-30T01:00:00.000000Z",
+            severity: "error",
+            error_type: "folder_creation_failed",
+            message: "Failed to create directory",
+            context: {path: "/Mining/Miners/", permission_error: true}
+          }
+        ]
+    
+    hourly_brainstem_report:
+      filename: "Brainstem/Hourly/hourly_brainstem_report_example.json"
+      created_by: "Brainstem"
+      structure:
+        metadata: {created_by: "Brainstem", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        folders_created: 0
+        files_validated: 31
+    
+    hourly_brainstem_error:
+      filename: "Brainstem/Hourly/hourly_brainstem_error_example.json"
+      created_by: "Brainstem"
+      structure:
+        metadata: {created_by: "Brainstem", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        errors: []
+    
+    # Year-level Brainstem examples
+    year_brainstem_report:
+      filename: "Brainstem/Year/year_brainstem_report_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem infrastructure reports for entire year"
+      structure:
+        metadata: {created_by: "Brainstem", level: "year", year: "2025"}
+        total_initializations: 0
+        folders_created: 0
+        year: "2025"
+        reports: []
+    
+    year_brainstem_error:
+      filename: "Brainstem/Year/year_brainstem_error_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem errors for entire year"
+      structure:
+        metadata: {created_by: "Brainstem", level: "year", year: "2025"}
+        total_errors: 0
+        year: "2025"
+        errors: []
+    
+    # Month-level Brainstem examples
+    month_brainstem_report:
+      filename: "Brainstem/Month/month_brainstem_report_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem infrastructure reports for entire month"
+      structure:
+        metadata: {created_by: "Brainstem", level: "month", year: "2025", month: "12"}
+        total_initializations: 0
+        folders_created: 0
+        month: "12"
+        reports: []
+    
+    month_brainstem_error:
+      filename: "Brainstem/Month/month_brainstem_error_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem errors for entire month"
+      structure:
+        metadata: {created_by: "Brainstem", level: "month", year: "2025", month: "12"}
+        total_errors: 0
+        month: "12"
+        errors: []
+    
+    # Week-level Brainstem examples
+    week_brainstem_report:
+      filename: "Brainstem/Week/week_brainstem_report_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem infrastructure reports for entire week"
+      structure:
+        metadata: {created_by: "Brainstem", level: "week", year: "2025", week: "W50"}
+        total_initializations: 0
+        folders_created: 0
+        week: "W50"
+        reports: []
+    
+    week_brainstem_error:
+      filename: "Brainstem/Week/week_brainstem_error_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem errors for entire week"
+      structure:
+        metadata: {created_by: "Brainstem", level: "week", year: "2025", week: "W50"}
+        total_errors: 0
+        week: "W50"
+        errors: []
+    
+    # Day-level Brainstem examples
+    day_brainstem_report:
+      filename: "Brainstem/Day/day_brainstem_report_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem infrastructure reports for entire day"
+      structure:
+        metadata: {created_by: "Brainstem", level: "day", year: "2025", month: "12", day: "12"}
+        total_initializations: 0
+        folders_created: 0
+        day: "12"
+        reports: []
+    
+    day_brainstem_error:
+      filename: "Brainstem/Day/day_brainstem_error_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem errors for entire day"
+      structure:
+        metadata: {created_by: "Brainstem", level: "day", year: "2025", month: "12", day: "12"}
+        total_errors: 0
+        day: "12"
+        errors: []
+  
+  dtm_examples:
+    # DTM Component - Template Processing & Ledgers
+    global_ledger:
+      filename: "DTM/Global/global_ledger_example.json"
+      created_by: "DTM"
+      purpose: "ALL mining attempts ever - complete history"
+      structure:
+        metadata: {created_by: "DTM", purpose: "Track all mining attempts", version: "1.0"}
+        total_hashes: 0
+        total_blocks_found: 0
+        total_attempts: 0
+        computational_hours: 0.0
+        system_status: {
+          status: "operational",
+          last_update: "2025-12-04T00:00:00.000000Z",
+          active_miners: 0,
+          miners_with_issues: 0,
+          average_hash_rate: 0,
+          issues: []
+        }
+        entries: [
+          {
+            attempt_id: "attempt_20251204_000000_001",
+            timestamp: "2025-12-04T00:00:00.000000Z",
+            block_height: 870000,
+            miner_id: "miner_001",
+            nonce: 3908178616,
+            merkleroot: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            meets_difficulty: true,
+            leading_zeros: 19,
+            status: "mined",
+            submitted_to_network: true,
+            submission_timestamp: "2025-12-04T00:00:05.123456Z",
+            references: {
+              math_proof: "proof_20251204_000000_001",
+              submission_tracking: "sub_20251204_000005_001",
+              block_submission: "block_submission_870000_20251204_000000.json"
+            }
+          }
+        ]
+    
+    global_math_proof:
+      filename: "DTM/Global/global_math_proof_example.json"
+      created_by: "DTM"
+      purpose: "Legal proof of blocks found - for taxes/claims"
+      structure:
+        metadata: {created_by: "DTM", purpose: "Mathematical proofs", version: "1.0"}
+        total_proofs: 0
+        total_blocks_proven: 0
+        proofs: [
+          {
+            proof_id: "proof_20251130_060000_001",
+            attempt_id: "attempt_20251130_060000_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            block_height: 870000,
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            miner_id: "miner_001",
+            hardware_attestation: {
+              ip_address: "192.168.1.100",
+              hostname: "mining-rig-01",
+              mac_address: "00:1A:2B:3C:4D:5E"
+            },
+            categories_applied: {
+              families: "Knuth-Sorrellian-Class(BitLoad, 95, 425000)",
+              lanes: "Knuth-Sorrellian-Class(BitLoad, 100, 650000)",
+              strides: "Knuth-Sorrellian-Class(BitLoad, 92, 512000)",
+              palette: "Knuth-Sorrellian-Class(BitLoad, 80, 156912)",
+              sandbox: "Knuth-Sorrellian-Class(BitLoad, 80, 156912)"
+            },
+            bitload: 208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909,
+            verification_status: "verified"
+          }
+        ]
+    
+    global_dtm_report:
+      filename: "DTM/Global/global_dtm_report_example.json"
+      created_by: "DTM"
+      purpose: "Template processing and validation history"
+      structure:
+        metadata: {created_by: "DTM", version: "1.0"}
+        total_templates_processed: 150
+        total_validations_performed: 3
+        total_solutions_found: 3
+        reports: [
+          {
+            report_id: "dtm_report_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            templates_processed: 1,
+            solutions_validated: 1,
+            consensus_decisions: 1
+          }
+        ]
+    
+    global_dtm_error:
+      filename: "DTM/Global/global_dtm_error_example.json"
+      created_by: "DTM"
+      structure:
+        metadata: {created_by: "DTM", version: "1.0"}
+        total_errors: 0
+        errors: [
+          {
+            error_id: "dtm_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "error",
+            error_type: "validation_failed",
+            message: "Solution failed difficulty check",
+            context: {block_hash: "0000001234...", leading_zeros: 15, required: 19, miner_id: "miner_002"}
+          }
+        ]
+    
+    hourly_ledger:
+      filename: "DTM/Hourly/hourly_ledger_example.json"
+      created_by: "DTM"
+      purpose: "Hourly snapshot of computational work with system status"
+      structure:
+        metadata: {created_by: "DTM", purpose: "Hourly mining attempts tracking", hour: "2025-12-04_00"}
+        hour: "2025-12-04_00"
+        total_hashes_this_hour: 0
+        total_blocks_found_this_hour: 0
+        total_attempts_this_hour: 0
+        computational_hours_this_hour: 0.0
+        system_status: {
+          status: "operational",
+          timestamp: "2025-12-04T00:59:59.000000Z",
+          active_miners_this_hour: 0,
+          miners_with_issues: 0,
+          average_hash_rate_this_hour: 0,
+          peak_hash_rate_this_hour: 0,
+          lowest_hash_rate_this_hour: 0,
+          issues: [],
+          notes: "Hourly tracking initialized"
+        }
+        entries: [
+          {
+            attempt_id: "attempt_20251204_000000_001",
+            timestamp: "2025-12-04T00:00:00.000000Z",
+            block_height: 870000,
+            miner_id: "miner_001",
+            nonce: 3908178616,
+            merkleroot: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            meets_difficulty: true,
+            leading_zeros: 19,
+            status: "mined",
+            submitted_to_network: true,
+            submission_timestamp: "2025-12-04T00:00:05.123456Z"
+          }
+        ]
+    
+    hourly_math_proof:
+      filename: "DTM/Hourly/hourly_math_proof_example.json"
+      created_by: "DTM"
+      purpose: "Detailed proof with hardware evidence and mathematical execution"
+      structure:
+        metadata: {created_by: "DTM", hour: "2025-11-30_06", purpose: "Legal proof with hardware attestation"}
+        hour: "2025-11-30_06"
+        proofs_this_hour: 1
+        proofs: [
+          {
+            proof_id: "proof_20251130_060000_001",
+            attempt_id: "attempt_20251130_060000_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            block_height: 870000,
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            miner_id: "miner_001",
+            hardware_attestation: {
+              ip_address: "192.168.1.100",
+              hostname: "mining-rig-01",
+              mac_address: "00:1A:2B:3C:4D:5E",
+              cpu: {model: "AMD Ryzen 9 5950X", cores: 16, threads: 32, serial: "CPU-SN-12345"},
+              ram: {total_gb: 64, manufacturer: "Corsair"},
+              gpu: {model: "NVIDIA RTX 4090", vram_gb: 24, serial: "GPU-SN-67890"},
+              system_uptime_seconds: 345600,
+              process_id: 12345
+            },
+            bitload_proof: 208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909,
+            category_execution: {
+              families: {
+                knuth_class: "Knuth-Sorrellian-Class(BitLoad, 95, 425000)",
+                pre_phase: {
+                  drift_check: {level: "BitLoad", phase: "pre", result: "passed", timestamp: "2025-11-30T06:00:00.100Z"},
+                  integrity_check: {value: "Knuth-Sorrellian-Class(...)", result: "passed", timestamp: "2025-11-30T06:00:00.150Z"},
+                  recursion_sync: {level: "BitLoad", mode: "forks", result: "synced", timestamp: "2025-11-30T06:00:00.200Z"},
+                  entropy_balance: {level: "BitLoad", result: "balanced", entropy_value: 0.9987, timestamp: "2025-11-30T06:00:00.250Z"},
+                  shas12_stabilizer: {value: "941d793ce78e45983a4d98d6e4ed0529d923/...", verified: true}
+                },
+                main_phase: {
+                  sorrell_applied: "Knuth-Sorrellian-Class(BitLoad,95,425000)",
+                  fork_cluster: {applied: true, forks_processed: 425000},
+                  over_recursion: {applied: true, recursion_depth: 95},
+                  bitload_applied: 208500855993373022767225770164375163068756085544106017996338881654571185256056754443039992227128051932599645909,
+                  cycles_completed: 225,
+                  execution_time_ms: 450
+                },
+                post_phase: {
+                  shas12_stabilizer: {value: "74402f56dc3f9154da10ab8d5dbe518db9aa2a332b223bc7bdca9871d0b1a55c3cc03b25e5053/...", verified: true},
+                  drift_check: {level: "BitLoad", phase: "post", result: "passed"},
+                  recursion_sync: {level: "BitLoad", phase: "post", result: "synced"},
+                  fork_sync: {level: "BitLoad", result: "synced", forks_validated: 425000}
+                }
+              },
+              lanes: {knuth_class: "Knuth-Sorrellian-Class(BitLoad, 100, 650000)", cycles: 275, execution_time_ms: 550},
+              strides: {knuth_class: "Knuth-Sorrellian-Class(BitLoad, 92, 512000)", cycles: 320, execution_time_ms: 512},
+              palette: {knuth_class: "Knuth-Sorrellian-Class(BitLoad, 80, 156912)", cycles: 161, execution_time_ms: 312},
+              sandbox: {knuth_class: "Knuth-Sorrellian-Class(BitLoad, 80, 156912)", cycles: 161, execution_time_ms: 312}
+            },
+            computation_proof: {
+              total_execution_time_ms: 2136,
+              total_hashes_computed: 2500000,
+              hash_rate_per_second: 1250000,
+              nonce_range_searched: {start: 3900000000, end: 3910000000},
+              nonce_found: 3908178616
+            },
+            result: {
+              nonce: 3908178616,
+              merkleroot: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+              block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+              leading_zeros: 19,
+              meets_difficulty: true,
+              verification_status: "verified",
+              verified_at: "2025-11-30T06:00:02.136Z"
+            }
+          }
+        ]
+    
+    hourly_dtm_report:
+      filename: "DTM/Hourly/hourly_dtm_report_example.json"
+      created_by: "DTM"
+      structure:
+        metadata: {created_by: "DTM", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        templates_processed: 1
+        solutions_validated: 1
+        guidance_issued: {
+          miner_001: {nonce_range: {start: 3900000000, end: 3910000000}, strategy: "Quasar-Class"}
+        }
+    
+    hourly_dtm_error:
+      filename: "DTM/Hourly/hourly_dtm_error_example.json"
+      created_by: "DTM"
+      structure:
+        metadata: {created_by: "DTM", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        errors: [
+          {
+            error_id: "dtm_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "error",
+            error_type: "validation_failed",
+            message: "Solution insufficient leading zeros",
+            miner_id: "miner_002"
+          }
+        ]
+    
+    # Year-level DTM examples
+    year_dtm_report:
+      filename: "DTM/Year/year_dtm_report_example.json"
+      created_by: "DTM"
+      purpose: "DTM template processing reports for entire year"
+      structure:
+        metadata: {created_by: "DTM", level: "year", year: "2025"}
+        templates_processed: 0
+        validations_performed: 0
+        year: "2025"
+        reports: []
+    
+    year_dtm_error:
+      filename: "DTM/Year/year_dtm_error_example.json"
+      created_by: "DTM"
+      purpose: "DTM errors for entire year"
+      structure:
+        metadata: {created_by: "DTM", level: "year", year: "2025"}
+        total_errors: 0
+        year: "2025"
+        errors: []
+    
+    # Month-level DTM examples
+    month_dtm_report:
+      filename: "DTM/Month/month_dtm_report_example.json"
+      created_by: "DTM"
+      purpose: "DTM template processing reports for entire month"
+      structure:
+        metadata: {created_by: "DTM", level: "month", year: "2025", month: "12"}
+        templates_processed: 0
+        validations_performed: 0
+        month: "12"
+        reports: []
+    
+    month_dtm_error:
+      filename: "DTM/Month/month_dtm_error_example.json"
+      created_by: "DTM"
+      purpose: "DTM errors for entire month"
+      structure:
+        metadata: {created_by: "DTM", level: "month", year: "2025", month: "12"}
+        total_errors: 0
+        month: "12"
+        errors: []
+    
+    # Week-level DTM examples
+    week_dtm_report:
+      filename: "DTM/Week/week_dtm_report_example.json"
+      created_by: "DTM"
+      purpose: "DTM template processing reports for entire week"
+      structure:
+        metadata: {created_by: "DTM", level: "week", year: "2025", week: "W50"}
+        templates_processed: 0
+        validations_performed: 0
+        week: "W50"
+        reports: []
+    
+    week_dtm_error:
+      filename: "DTM/Week/week_dtm_error_example.json"
+      created_by: "DTM"
+      purpose: "DTM errors for entire week"
+      structure:
+        metadata: {created_by: "DTM", level: "week", year: "2025", week: "W50"}
+        total_errors: 0
+        week: "W50"
+        errors: []
+    
+    # Day-level DTM examples
+    day_dtm_report:
+      filename: "DTM/Day/day_dtm_report_example.json"
+      created_by: "DTM"
+      purpose: "DTM template processing reports for entire day"
+      structure:
+        metadata: {created_by: "DTM", level: "day", year: "2025", month: "12", day: "12"}
+        templates_processed: 0
+        validations_performed: 0
+        day: "12"
+        reports: []
+    
+    day_dtm_error:
+      filename: "DTM/Day/day_dtm_error_example.json"
+      created_by: "DTM"
+      purpose: "DTM errors for entire day"
+      structure:
+        metadata: {created_by: "DTM", level: "day", year: "2025", month: "12", day: "12"}
+        total_errors: 0
+        day: "12"
+        errors: []
+  
+  looping_examples:
+    # Looping Component - Mining Coordination & Submissions
+    global_submission:
+      filename: "Looping/Global/global_submission_example.json"
+      created_by: "Looping"
+      purpose: "ALL block submissions to Bitcoin network - track RESULTS and network responses"
+      structure:
+        metadata: {created_by: "Looping", purpose: "Track submission results and network responses", version: "1.0"}
+        total_submissions: 0
+        accepted: 0
+        rejected: 0
+        orphaned: 0
+        pending: 0
+        system_status: {
+          status: "operational",
+          last_update: "2025-12-04T00:00:00.000000Z",
+          bitcoin_core_connected: true,
+          bitcoin_core_version: "/Satoshi:26.0.0/",
+          network_difficulty: 0,
+          acceptance_rate: 0,
+          issues: []
+        }
+        submissions: [
+          {
+            submission_id: "sub_20251204_000005_001",
+            timestamp: "2025-12-04T00:00:05.123456Z",
+            block_height: 870000,
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            block_submission_file: "block_submission_870000_20251204_000000.json",
+            miner_id: "miner_001",
+            nonce: 3908178616,
+            network_response: {
+              status: "accepted",
+              rpc_response: "null",
+              response_time_ms: 1247,
+              node_version: "/Satoshi:26.0.0/"
+            },
+            confirmation_tracking: {
+              confirmations: 0,
+              first_seen_by_node: null,
+              confirmed_in_blockchain: null,
+              orphaned: false
+            },
+            payout: {
+              expected_btc: 0,
+              actual_btc: 0,
+              payout_address: "",
+              transaction_id: null,
+              maturity_blocks: 100,
+              spendable_after_height: 0
+            },
+            references: {
+              ledger_entry: "attempt_20251204_000000_001",
+              math_proof: "proof_20251204_000000_001",
+              block_submission: "block_submission_870000_20251204_000000.json"
+            }
+          }
+        ]
+    
+    global_looping_report:
+      filename: "Looping/Global/global_looping_report_example.json"
+      created_by: "Looping"
+      purpose: "Mining coordination history"
+      structure:
+        metadata: {created_by: "Looping", version: "1.0"}
+        total_mining_sessions: 50
+        total_templates_distributed: 150
+        total_submissions_sent: 3
+        reports: [
+          {
+            report_id: "loop_report_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            templates_distributed: 1,
+            miners_active: 5,
+            submissions_sent: 1
+          }
+        ]
+    
+    global_looping_error:
+      filename: "Looping/Global/global_looping_error_example.json"
+      created_by: "Looping"
+      structure:
+        metadata: {created_by: "Looping", version: "1.0"}
+        total_errors: 0
+        errors: [
+          {
+            error_id: "loop_err_001",
+            timestamp: "2025-11-30T06:00:05.000000Z",
+            severity: "critical",
+            error_type: "submission_rejected",
+            message: "Bitcoin Core rejected block submission",
+            context: {block_hash: "0000000000...", network_response: "rejected", reason: "duplicate", rpc_endpoint: "http://127.0.0.1:8332"}
+          }
+        ]
+    
+    hourly_submission:
+      filename: "Looping/Hourly/hourly_submission_example.json"
+      created_by: "Looping"
+      purpose: "Hourly snapshot of block submissions and network responses with system status"
+      structure:
+        metadata: {created_by: "Looping", purpose: "Hourly submission tracking and network responses", hour: "2025-12-04_00"}
+        hour: "2025-12-04_00"
+        total_submissions_this_hour: 0
+        accepted_this_hour: 0
+        rejected_this_hour: 0
+        orphaned_this_hour: 0
+        pending_this_hour: 0
+        system_status: {
+          status: "operational",
+          timestamp: "2025-12-04T00:59:59.999999Z",
+          bitcoin_core_connected: true,
+          bitcoin_core_version: "/Satoshi:26.0.0/",
+          bitcoin_core_uptime_hours: 0,
+          network_difficulty: 0,
+          average_submission_latency_ms: 0,
+          rpc_errors_this_hour: 0,
+          acceptance_rate_this_hour: 0,
+          issues: [],
+          notes: "Hourly tracking initialized"
+        }
+        submissions: [
+          {
+            submission_id: "sub_20251204_000005_001",
+            timestamp: "2025-12-04T00:00:05.123456Z",
+            block_height: 870000,
+            block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234",
+            block_submission_file: "block_submission_870000_20251204_000000.json",
+            miner_id: "miner_001",
+            nonce: 3908178616,
+            network_response: {
+              status: "accepted",
+              rpc_response: "null",
+              response_time_ms: 0,
+              node_version: "/Satoshi:26.0.0/"
+            },
+            references: {
+              ledger_entry: "attempt_20251204_000000_001",
+              math_proof: "proof_20251204_000000_001",
+              block_submission: "block_submission_870000_20251204_000000.json"
+            }
+          }
+        ]
+    
+    hourly_looping_report:
+      filename: "Looping/Hourly/hourly_looping_report_example.json"
+      created_by: "Looping"
+      structure:
+        metadata: {created_by: "Looping", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        mining_sessions: 1
+        templates_distributed: 1
+        miners_coordinated: {miner_001: {status: "active", template_received: true}}
+    
+    hourly_looping_error:
+      filename: "Looping/Hourly/hourly_looping_error_example.json"
+      created_by: "Looping"
+      structure:
+        metadata: {created_by: "Looping", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        errors: [
+          {
+            error_id: "loop_err_001",
+            timestamp: "2025-11-30T06:00:05.000000Z",
+            severity: "critical",
+            error_type: "submission_rejected",
+            message: "Block rejected by network",
+            network_response: "duplicate"
+          }
+        ]
+    
+    # Year-level Looping examples
+    year_looping_report:
+      filename: "Looping/Year/year_looping_report_example.json"
+      created_by: "Looping"
+      purpose: "Looping orchestration reports for entire year"
+      structure:
+        metadata: {created_by: "Looping", level: "year", year: "2025"}
+        mining_sessions: 0
+        submissions: 0
+        year: "2025"
+        reports: []
+    
+    year_looping_error:
+      filename: "Looping/Year/year_looping_error_example.json"
+      created_by: "Looping"
+      purpose: "Looping errors for entire year"
+      structure:
+        metadata: {created_by: "Looping", level: "year", year: "2025"}
+        total_errors: 0
+        year: "2025"
+        errors: []
+    
+    # Month-level Looping examples
+    month_looping_report:
+      filename: "Looping/Month/month_looping_report_example.json"
+      created_by: "Looping"
+      purpose: "Looping orchestration reports for entire month"
+      structure:
+        metadata: {created_by: "Looping", level: "month", year: "2025", month: "12"}
+        mining_sessions: 0
+        submissions: 0
+        month: "12"
+        reports: []
+    
+    month_looping_error:
+      filename: "Looping/Month/month_looping_error_example.json"
+      created_by: "Looping"
+      purpose: "Looping errors for entire month"
+      structure:
+        metadata: {created_by: "Looping", level: "month", year: "2025", month: "12"}
+        total_errors: 0
+        month: "12"
+        errors: []
+    
+    # Week-level Looping examples
+    week_looping_report:
+      filename: "Looping/Week/week_looping_report_example.json"
+      created_by: "Looping"
+      purpose: "Looping orchestration reports for entire week"
+      structure:
+        metadata: {created_by: "Looping", level: "week", year: "2025", week: "W50"}
+        mining_sessions: 0
+        submissions: 0
+        week: "W50"
+        reports: []
+    
+    week_looping_error:
+      filename: "Looping/Week/week_looping_error_example.json"
+      created_by: "Looping"
+      purpose: "Looping errors for entire week"
+      structure:
+        metadata: {created_by: "Looping", level: "week", year: "2025", week: "W50"}
+        total_errors: 0
+        week: "W50"
+        errors: []
+    
+    # Day-level Looping examples
+    day_looping_report:
+      filename: "Looping/Day/day_looping_report_example.json"
+      created_by: "Looping"
+      purpose: "Looping orchestration reports for entire day"
+      structure:
+        metadata: {created_by: "Looping", level: "day", year: "2025", month: "12", day: "12"}
+        mining_sessions: 0
+        submissions: 0
+        day: "12"
+        reports: []
+    
+    day_looping_error:
+      filename: "Looping/Day/day_looping_error_example.json"
+      created_by: "Looping"
+      purpose: "Looping errors for entire day"
+      structure:
+        metadata: {created_by: "Looping", level: "day", year: "2025", month: "12", day: "12"}
+        total_errors: 0
+        day: "12"
+        errors: []
+  
+  miners_examples:
+    # Miners Component - ALL Mining Processes Combined
+    global_mining_process_report:
+      filename: "Miners/Global/global_mining_process_report_example.json"
+      created_by: "ALL Miners Combined"
+      purpose: "Combined miner history"
+      structure:
+        metadata: {created_by: "ALL Miners", version: "1.0"}
+        total_hashes: 150000000000
+        total_miners: 5
+        total_blocks_found: 3
+        miners: [
+          {
+            miner_id: "miner_001",
+            total_hashes: 50000000000,
+            blocks_found: 1,
+            average_hash_rate: 1250000,
+            uptime_hours: 240
+          }
+        ]
+    
+    global_mining_process_error:
+      filename: "Miners/Global/global_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      structure:
+        metadata: {created_by: "ALL Miners", version: "1.0"}
+        total_errors: 0
+        errors: [
+          {
+            error_id: "miner_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "warning",
+            error_type: "mining_timeout",
+            message: "Nonce range exhausted without solution",
+            context: {miner_id: "miner_003", nonce_range: {start: 4000000000, end: 4010000000}, hashes_tried: 10000000}
+          }
+        ]
+    
+    hourly_mining_process_report:
+      filename: "Miners/Hourly/hourly_mining_process_report_example.json"
+      created_by: "ALL Miners"
+      structure:
+        metadata: {created_by: "ALL Miners", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        total_hashes: 7500000
+        miners: {
+          miner_001: {
+            ip_address: "192.168.1.100",
+            hostname: "mining-rig-01",
+            hashes_this_hour: 7500000,
+            hash_rate_avg: 1250000,
+            hash_rate_peak: 1350000,
+            nonce_ranges_tried: [{start: 3900000000, end: 3910000000}],
+            best_attempt: {
+              nonce: 3908178616,
+              leading_zeros: 19,
+              block_hash: "0000000000000000000234abcdef1234567890abcdef1234567890abcdef1234"
+            },
+            hardware_status: {
+              cpu_usage_percent: 85,
+              ram_usage_percent: 50,
+              gpu_temp_c: 72,
+              gpu_power_watts: 350
+            }
+          }
+        }
+    
+    hourly_mining_process_error:
+      filename: "Miners/Hourly/hourly_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      structure:
+        metadata: {created_by: "ALL Miners", hour: "2025-11-30_06"}
+        hour: "2025-11-30_06"
+        errors: [
+          {
+            error_id: "miner_err_001",
+            timestamp: "2025-11-30T06:00:00.000000Z",
+            severity: "warning",
+            error_type: "mining_timeout",
+            message: "Nonce range exhausted",
+            miner_id: "miner_003",
+            hashes_tried: 10000000
+          }
+        ]
+    
+    # Year-level Miners examples
+    year_mining_process_report:
+      filename: "Miners/Year/year_mining_process_report_example.json"
+      created_by: "ALL Miners"
+      purpose: "Combined miner reports for entire year"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "year", year: "2025"}
+        total_hashes: 0
+        total_miners: 0
+        total_blocks_found: 0
+        year: "2025"
+        reports: []
+    
+    year_mining_process_error:
+      filename: "Miners/Year/year_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      purpose: "Miner errors for entire year"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "year", year: "2025"}
+        total_errors: 0
+        year: "2025"
+        errors: []
+    
+    # Month-level Miners examples
+    month_mining_process_report:
+      filename: "Miners/Month/month_mining_process_report_example.json"
+      created_by: "ALL Miners"
+      purpose: "Combined miner reports for entire month"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "month", year: "2025", month: "12"}
+        total_hashes: 0
+        total_miners: 0
+        total_blocks_found: 0
+        month: "12"
+        reports: []
+    
+    month_mining_process_error:
+      filename: "Miners/Month/month_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      purpose: "Miner errors for entire month"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "month", year: "2025", month: "12"}
+        total_errors: 0
+        month: "12"
+        errors: []
+    
+    # Week-level Miners examples
+    week_mining_process_report:
+      filename: "Miners/Week/week_mining_process_report_example.json"
+      created_by: "ALL Miners"
+      purpose: "Combined miner reports for entire week"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "week", year: "2025", week: "W50"}
+        total_hashes: 0
+        total_miners: 0
+        total_blocks_found: 0
+        week: "W50"
+        reports: []
+    
+    week_mining_process_error:
+      filename: "Miners/Week/week_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      purpose: "Miner errors for entire week"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "week", year: "2025", week: "W50"}
+        total_errors: 0
+        week: "W50"
+        errors: []
+    
+    # Day-level Miners examples
+    day_mining_process_report:
+      filename: "Miners/Day/day_mining_process_report_example.json"
+      created_by: "ALL Miners"
+      purpose: "Combined miner reports for entire day"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "day", year: "2025", month: "12", day: "12"}
+        total_hashes: 0
+        total_miners: 0
+        total_blocks_found: 0
+        day: "12"
+        reports: []
+    
+    day_mining_process_error:
+      filename: "Miners/Day/day_mining_process_error_example.json"
+      created_by: "ALL Miners"
+      purpose: "Miner errors for entire day"
+      structure:
+        metadata: {created_by: "ALL Miners", level: "day", year: "2025", month: "12", day: "12"}
+        total_errors: 0
+        day: "12"
+        errors: []
+  
+  template_examples:
+    # Template Files
+    current_template:
+      filename: "Templates/current_template_example.json"
+      created_by: "Looping via Bitcoin Core"
+      purpose: "Current mining template from getblocktemplate RPC"
+      structure:
+        metadata: {created_by: "Looping", purpose: "Active mining template from Bitcoin Core", template_received_at: "2025-11-30T06:00:00.000000Z"}
+        version: 536870912
+        previousblockhash: "00000000000000000001f2bc3d4e5f6789012345678901234567890abcdef12"
+        transactions: [
+          {
+            txid: "tx1abc123def456...",
+            fee: 5000,
+            sigops: 4,
+            weight: 500,
+            data: "0200000001..."
+          }
+        ]
+        coinbaseaux: {flags: "062f503253482f"}
+        coinbasevalue: 312500000
+        target: "0000000000000000000f0000000000000000000000000000000000000000000"
+        mintime: 1732946300
+        mutable: ["time", "transactions", "prevblock"]
+        noncerange: "00000000ffffffff"
+        sigoplimit: 80000
+        sizelimit: 4000000
+        weightlimit: 4000000
+        curtime: 1732946400
+        bits: "170c7537"
+        height: 870000
+        default_witness_commitment: "6a24aa21a9ed..."
+  
+  # ========================================================================
+  # HIERARCHICAL TIME FILE EXAMPLES
+  # These templates define the structure for YYYY/MM/W{WW}/DD level files
+  # ========================================================================
+  hierarchical_time_examples:
+    - name: "Year Level Ledger"
+      filename: "Hierarchical/global_year_example.json"
+      created_by: "Brain"
+      purpose: "Template for Year-level aggregation files (global_YYYY.json)"
+      structure:
+        metadata:
+          file_type: "global_year_ledger"
+          level: "year"
+          year: "2025"
+          created: "2025-12-10T00:00:00.000000Z"
+          last_updated: "2025-12-10T00:00:00.000000Z"
+          mode: "production"
+          component: "DTM"
+          purpose: "Aggregates ALL entries for this year from all months/weeks/days/hours"
+        hashes_this_year: 0
+        blocks_found_this_year: 0
+        total_attempts_this_year: 0
+        best_leading_zeros_this_year: 0
+        entries: []
+    
+    - name: "Month Level Ledger"
+      filename: "Hierarchical/global_month_example.json"
+      created_by: "Brain"
+      purpose: "Template for Month-level aggregation files (global_MM.json)"
+      structure:
+        metadata:
+          file_type: "global_month_ledger"
+          level: "month"
+          year: "2025"
+          month: "12"
+          created: "2025-12-10T00:00:00.000000Z"
+          last_updated: "2025-12-10T00:00:00.000000Z"
+          mode: "production"
+          component: "DTM"
+          purpose: "Aggregates ALL entries for this month from all weeks/days/hours"
+        hashes_this_month: 0
+        blocks_found_this_month: 0
+        total_attempts_this_month: 0
+        best_leading_zeros_this_month: 0
+        entries: []
+    
+    - name: "Week Level Ledger"
+      filename: "Hierarchical/global_week_example.json"
+      created_by: "Brain"
+      purpose: "Template for Week-level aggregation files (global_W{WW}.json)"
+      structure:
+        metadata:
+          file_type: "global_week_ledger"
+          level: "week"
+          year: "2025"
+          month: "12"
+          week: "W49"
+          created: "2025-12-10T00:00:00.000000Z"
+          last_updated: "2025-12-10T00:00:00.000000Z"
+          mode: "production"
+          component: "DTM"
+          purpose: "Aggregates ALL entries for this week from all days/hours"
+        hashes_this_week: 0
+        blocks_found_this_week: 0
+        total_attempts_this_week: 0
+        best_leading_zeros_this_week: 0
+        entries: []
+    
+    - name: "Day Level Ledger"
+      filename: "Hierarchical/global_day_example.json"
+      created_by: "Brain"
+      purpose: "Template for Day-level aggregation files (global_DD.json)"
+      structure:
+        metadata:
+          file_type: "global_day_ledger"
+          level: "day"
+          year: "2025"
+          month: "12"
+          day: "10"
+          created: "2025-12-10T00:00:00.000000Z"
+          last_updated: "2025-12-10T00:00:00.000000Z"
+          mode: "production"
+          component: "DTM"
+          purpose: "Aggregates ALL entries for this day from all hours"
+        hashes_this_day: 0
+        blocks_found_this_day: 0
+        total_attempts_this_day: 0
+        best_leading_zeros_this_day: 0
+        entries: []
+    
+    - name: "Hour Report Text"
+      filename: "Hierarchical/REPORT_example.txt"
+      created_by: "Brain"
+      purpose: "Template for hourly REPORT.txt files"
+      content: |
+        ================================================================================
+        HOURLY REPORT - 2025-12-10 15:00
+        5×UNIVERSE-SCALE MATHEMATICAL FRAMEWORK
+        ================================================================================
+        
+        Component: DTM
+        Mode: production
+        Year/Month/Day/Hour: 2025/12/10/15
+        
+        Mining Activity:
+        - Timestamp: 2025-12-10T15:00:00.000000Z
+        - Block Hash: 0000000000000000000example_hash
+        - Nonce: 12345678
+        - Miner ID: example_miner
+        - Leading Zeros: 19
+        
+        Mathematical Backing:
+        - BitLoad: 111-digit universe constant
+        - Knuth-Sorrellian-Class: (80 levels, 156,912 iterations, 161 cycles)
+        
+        Hierarchical Path: Mining/Ledgers/2025/12/10/15/
+        
+        ================================================================================
+  
+  # ========================================================================
+  # AGGREGATED INDEX EXAMPLES
+  # These track rollup data at each time level
+  # ========================================================================
+  aggregated_index_examples:
+    - name: "Root Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_root_example.json"
+      created_by: "Brain"
+      purpose: "Root index containing ALL years/months/weeks/days/hours"
+      structure:
+        metadata:
+          file_type: "aggregated_index_root"
+          level: "root"
+          scope: "Contains ALL time periods"
+          created: "2025-12-10T00:00:00.000000Z"
+          last_updated: "2025-12-10T00:00:00.000000Z"
+          philosophy: "ONE FILE = EVERYTHING at root level"
+        summary:
+          total_years: 0
+          total_months: 0
+          total_weeks: 0
+          total_days: 0
+          total_hours: 0
+          total_entries: 0
+        entries: []
+    
+    - name: "Year Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_year_example.json"
+      created_by: "Brain"
+      purpose: "Year index containing all months/weeks/days/hours"
+      structure:
+        metadata:
+          file_type: "aggregated_index_year"
+          level: "year"
+          year: "2025"
+          scope: "Year 2025 + all its time periods"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_months: 0
+          total_weeks: 0
+          total_days: 0
+          total_hours: 0
+          total_entries: 0
+        entries: []
+    
+    - name: "Month Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_month_example.json"
+      created_by: "Brain"
+      purpose: "Month index"
+      structure:
+        metadata:
+          file_type: "aggregated_index_month"
+          level: "month"
+          year: "2025"
+          month: "12"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_weeks: 0
+          total_days: 0
+          total_hours: 0
+          total_entries: 0
+        entries: []
+    
+    - name: "Week Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_week_example.json"
+      created_by: "Brain"
+      purpose: "Week index"
+      structure:
+        metadata:
+          file_type: "aggregated_index_week"
+          level: "week"
+          week: "W49"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_days: 0
+          total_hours: 0
+          total_entries: 0
+        entries: []
+    
+    - name: "Day Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_day_example.json"
+      created_by: "Brain"
+      purpose: "Day index"
+      structure:
+        metadata:
+          file_type: "aggregated_index_day"
+          level: "day"
+          day: "10"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_hours: 0
+          total_entries: 0
+        entries: []
+    
+    - name: "Hour Aggregated Index"
+      filename: "System_Reports/Aggregated_Index/aggregated_index_hour_example.json"
+      created_by: "Brain"
+      purpose: "Hour index"
+      structure:
+        metadata:
+          file_type: "aggregated_index_hour"
+          level: "hour"
+          hour: "15"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_entries: 0
+        entries: []
+  
+  # ========================================================================
+  # AGGREGATED SYSTEM REPORTS/ERRORS
+  # These combine data from ALL components
+  # ========================================================================
+  aggregated_system_examples:
+    - name: "Global Aggregated Reports"
+      filename: "System_Reports/Aggregated/Global/global_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregates system reports from ALL components"
+      structure:
+        metadata:
+          file_type: "aggregated_system_reports"
+          created_by: "Brain"
+          purpose: "Master aggregation from Brain, Brainstem, DTM, Looping, Miners"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_reports: 0
+          reports_by_component:
+            Brain: 0
+            Brainstem: 0
+            DTM: 0
+            Looping: 0
+            Miners: 0
+        entries: []
+    
+    - name: "Global Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Global/global_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregates system errors from ALL components"
+      structure:
+        metadata:
+          file_type: "aggregated_system_errors"
+          created_by: "Brain"
+          purpose: "Master error aggregation from all components"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_errors: 0
+          errors_by_severity:
+            critical: 0
+            error: 0
+            warning: 0
+          errors_by_component:
+            Brain: 0
+            Brainstem: 0
+            DTM: 0
+            Looping: 0
+            Miners: 0
+        entries: []
+    
+    # Year-level Aggregated examples
+    - name: "Year Aggregated Reports"
+      filename: "System_Reports/Aggregated/Year/year_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025", purpose: "Year-level aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        year: "2025"
+        total_reports: 0
+        reports_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    - name: "Year Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Year/year_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system errors for entire year"
+      structure:
+        metadata: {created_by: "Brain", level: "year", year: "2025"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        year: "2025"
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    # Month-level Aggregated examples
+    - name: "Month Aggregated Reports"
+      filename: "System_Reports/Aggregated/Month/month_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12", purpose: "Month-level aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        month: "12"
+        total_reports: 0
+        reports_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    - name: "Month Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Month/month_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system errors for entire month"
+      structure:
+        metadata: {created_by: "Brain", level: "month", year: "2025", month: "12"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        month: "12"
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    # Week-level Aggregated examples
+    - name: "Week Aggregated Reports"
+      filename: "System_Reports/Aggregated/Week/week_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50", purpose: "Week-level aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        week: "W50"
+        total_reports: 0
+        reports_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    - name: "Week Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Week/week_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system errors for entire week"
+      structure:
+        metadata: {created_by: "Brain", level: "week", year: "2025", week: "W50"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        week: "W50"
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    # Day-level Aggregated examples
+    - name: "Day Aggregated Reports"
+      filename: "System_Reports/Aggregated/Day/day_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12", purpose: "Day-level aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        day: "12"
+        total_reports: 0
+        reports_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    - name: "Day Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Day/day_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system errors for entire day"
+      structure:
+        metadata: {created_by: "Brain", level: "day", year: "2025", month: "12", day: "12"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        day: "12"
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    # Hourly-level Aggregated examples
+    - name: "Hourly Aggregated Reports"
+      filename: "System_Reports/Aggregated/Hourly/hourly_aggregated_report_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system reports for entire hour"
+      structure:
+        metadata: {created_by: "Brain", level: "hourly", year: "2025", month: "12", day: "12", hour: "22", purpose: "Hourly aggregation from all components"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        hour: "22"
+        total_reports: 0
+        reports_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+    
+    - name: "Hourly Aggregated Errors"
+      filename: "Error_Reports/Aggregated/Hourly/hourly_aggregated_error_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated system errors for entire hour"
+      structure:
+        metadata: {created_by: "Brain", level: "hourly", year: "2025", month: "12", day: "12", hour: "22"}
+        aggregated_from: ["Brain", "Brainstem", "DTM", "Looping", "Miners"]
+        hour: "22"
+        total_errors: 0
+        errors_by_severity: {critical: 0, error: 0, warning: 0}
+        errors_by_component: {Brain: 0, Brainstem: 0, DTM: 0, Looping: 0, Miners: 0}
+        entries: []
+  
+  # ========================================================================
+  # NETWORK SUBMISSION EXAMPLES
+  # ========================================================================
+  network_submission_examples:
+    - name: "Global Network Submissions"
+      filename: "Looping/Global/global_network_submission_example.json"
+      created_by: "Looping"
+      purpose: "Tracks valid blocks submitted to Bitcoin network"
+      structure:
+        metadata:
+          file_type: "network_submissions"
+          created_by: "Looping"
+          purpose: "Track VALID blocks submitted to network"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_submitted: 0
+          accepted: 0
+          rejected: 0
+          pending: 0
+        entries: []
+    
+    - name: "Hourly Network Submissions"
+      filename: "Looping/Hourly/hourly_network_submission_example.json"
+      created_by: "Looping"
+      purpose: "Hourly network submissions"
+      structure:
+        metadata:
+          file_type: "hourly_network_submissions"
+          hour: "2025-12-10_15"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          submissions_this_hour: 0
+        entries: []
+  
+  # ========================================================================
+  # REJECTION TRACKING EXAMPLES
+  # ========================================================================
+  rejection_examples:
+    - name: "Global Rejections"
+      filename: "Global/global_rejection_example.json"
+      created_by: "DTM"
+      purpose: "Tracks invalid blocks and failed submissions"
+      structure:
+        metadata:
+          file_type: "rejection_tracking"
+          created_by: "DTM"
+          purpose: "Track invalid blocks and rejection reasons"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          total_rejections: 0
+          rejections_by_reason:
+            invalid_difficulty: 0
+            invalid_merkle: 0
+            invalid_nonce: 0
+            network_error: 0
+        entries: []
+    
+    - name: "Hourly Rejections"
+      filename: "Hourly/hourly_rejection_example.json"
+      created_by: "DTM"
+      purpose: "Hourly rejection tracking"
+      structure:
+        metadata:
+          file_type: "hourly_rejection_tracking"
+          hour: "2025-12-10_15"
+          created: "2025-12-10T00:00:00.000000Z"
+        summary:
+          rejections_this_hour: 0
+        entries: []
+
+  # ========================================================================
+  # SUBMISSION LOG EXAMPLES (Looping-owned)
+  # ========================================================================
+  submission_log_examples:
+    - name: "Global Submission Log"
+      filename: "Submission_Logs/Global/global_submission_log_example.json"
+      created_by: "Looping"
+      purpose: "All submission attempts with network responses"
+      structure:
+        metadata: {created_by: "Looping", purpose: "Track submission attempts", version: "1.0"}
+        total_submissions: 0
+        accepted: 0
+        rejected: 0
+        orphaned: 0
+        pending: 0
+        submissions: []
+
+    - name: "Hourly Submission Log"
+      filename: "Submission_Logs/Hourly/hourly_submission_log_example.json"
+      created_by: "Looping"
+      purpose: "Hourly submission attempts"
+      structure:
+        metadata: {created_by: "Looping", hour: "2025-12-10_15", purpose: "Hourly submissions"}
+        total_submissions_this_hour: 0
+        accepted_this_hour: 0
+        rejected_this_hour: 0
+        submissions: []
+
+  # ========================================================================
+  # SYSTEM LOG EXAMPLES (component + aggregated)
+  # ========================================================================
+  system_log_examples:
+    - name: "Brain Global Log"
+      filename: "System_Logs/Brain/Global/global_brain_log_example.json"
+      created_by: "Brain"
+      purpose: "Brain orchestration log summary"
+      structure:
+        metadata: {created_by: "Brain", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "Brain Hourly Log"
+      filename: "System_Logs/Brain/Hourly/hourly_brain_log_example.json"
+      created_by: "Brain"
+      purpose: "Brain hourly log summary"
+      structure:
+        metadata: {created_by: "Brain", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+    - name: "Brainstem Global Log"
+      filename: "System_Logs/Brainstem/Global/global_brainstem_log_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem infrastructure log summary"
+      structure:
+        metadata: {created_by: "Brainstem", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "Brainstem Hourly Log"
+      filename: "System_Logs/Brainstem/Hourly/hourly_brainstem_log_example.json"
+      created_by: "Brainstem"
+      purpose: "Brainstem hourly log summary"
+      structure:
+        metadata: {created_by: "Brainstem", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+    - name: "DTM Global Log"
+      filename: "System_Logs/DTM/Global/global_dtm_log_example.json"
+      created_by: "DTM"
+      purpose: "DTM log summary"
+      structure:
+        metadata: {created_by: "DTM", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "DTM Hourly Log"
+      filename: "System_Logs/DTM/Hourly/hourly_dtm_log_example.json"
+      created_by: "DTM"
+      purpose: "DTM hourly log summary"
+      structure:
+        metadata: {created_by: "DTM", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+    - name: "Looping Global Log"
+      filename: "System_Logs/Looping/Global/global_looping_log_example.json"
+      created_by: "Looping"
+      purpose: "Looping controller log summary"
+      structure:
+        metadata: {created_by: "Looping", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "Looping Hourly Log"
+      filename: "System_Logs/Looping/Hourly/hourly_looping_log_example.json"
+      created_by: "Looping"
+      purpose: "Looping hourly log summary"
+      structure:
+        metadata: {created_by: "Looping", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+    - name: "Miners Global Log"
+      filename: "System_Logs/Miners/Global/global_miners_log_example.json"
+      created_by: "Miners"
+      purpose: "Miners log summary"
+      structure:
+        metadata: {created_by: "Miners", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "Miners Hourly Log"
+      filename: "System_Logs/Miners/Hourly/hourly_miners_log_example.json"
+      created_by: "Miners"
+      purpose: "Miners hourly log summary"
+      structure:
+        metadata: {created_by: "Miners", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+    - name: "Aggregated Global Logs"
+      filename: "System_Logs/Aggregated/Global/global_aggregated_log_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated logs from all components"
+      structure:
+        metadata: {created_by: "Brain", level: "global"}
+        total_entries: 0
+        entries: []
+
+    - name: "Aggregated Hourly Logs"
+      filename: "System_Logs/Aggregated/Hourly/hourly_aggregated_log_example.json"
+      created_by: "Brain"
+      purpose: "Aggregated hourly logs from all components"
+      structure:
+        metadata: {created_by: "Brain", level: "hour", hour: "2025-12-10_15"}
+        total_entries: 0
+        entries: []
+
+  # ========================================================================
+  # LEDGER / MATH PROOF / SUBMISSION LOG AGGREGATED EXAMPLES
+  # ========================================================================
+  aggregated_data_examples:
+    - name: "Ledger Global Aggregated"
+      filename: "Ledgers/Aggregated/global_ledger_aggregated_example.json"
+      created_by: "DTM"
+      purpose: "Aggregated ledger across all periods"
+      structure:
+        metadata: {file_type: "aggregated_ledger", level: "global"}
+        total_attempts: 0
+        entries: []
+
+    - name: "Math Proof Global Aggregated"
+      filename: "Ledgers/Aggregated/global_math_proof_aggregated_example.json"
+      created_by: "DTM"
+      purpose: "Aggregated math proofs across all periods"
+      structure:
+        metadata: {file_type: "aggregated_math_proof", level: "global"}
+        total_proofs: 0
+        entries: []
+
+    - name: "Submission Log Global Aggregated"
+      filename: "Submission_Logs/Aggregated/global_submission_log_aggregated_example.json"
+      created_by: "Looping"
+      purpose: "Aggregated submission logs across all periods"
+      structure:
+        metadata: {file_type: "aggregated_submission_log", level: "global"}
+        total_submissions: 0
+        accepted: 0
+        rejected: 0
+        entries: []
+
+    - name: "Aggregated Hourly Ledger"
+      filename: "Ledgers/Aggregated/Hourly/hourly_ledger_aggregated_example.json"
+      created_by: "DTM"
+      purpose: "Hourly aggregated ledger"
+      structure:
+        metadata: {file_type: "aggregated_ledger", level: "hour", hour: "2025-12-10_15"}
+        total_attempts: 0
+        entries: []
+
+    - name: "Aggregated Hourly Submission Log"
+      filename: "Submission_Logs/Aggregated/Hourly/hourly_submission_log_aggregated_example.json"
+      created_by: "Looping"
+      purpose: "Hourly aggregated submission logs"
+      structure:
+        metadata: {file_type: "aggregated_submission_log", level: "hour", hour: "2025-12-10_15"}
+        total_submissions: 0
+        accepted: 0
+        rejected: 0
+        entries: []
+
+file_operations:
+  # CANONICAL FILE WRITING SYSTEM - ALL components MUST use brain_save_* functions
+  # This ensures consistent hierarchical structure across ALL modes and ALL components
+  canonical_writer: "Singularity_Dave_Brainstem_UNIVERSE_POWERED.brain_save_*"
+  
+  initialization:
+    function: "brain_initialize_mode(mode, component_name)"
+    description: "Initialize everything for a mode - folders, System_File_Examples, aggregated indices"
+    requirements:
+      - "Create all folder structures from Brain.QTL folder_management section"
+      - "Generate System_File_Examples folder if not present"
+      - "Create aggregated_index files at all levels (Year/Month/Week/Day)"
+      - "Set mode for all subsequent operations"
+    calls_automatically:
+      - "brain_create_folder() for all folders"
+      - "brain_init_hierarchical_structure() for ledgers, math_proofs, submission_logs"
+      - "brain_init_aggregated_index() for all levels"
+      - "brain_create_system_examples() if folder missing"
+  
+  template_system:
+    function: "brain_create_system_examples()"
+    description: "Creates System_File_Examples folder with templates if missing"
+    templates_generated:
+      base_payloads:
+        - "DTM/Global/global_ledger_example.json"
+        - "DTM/Hourly/hourly_ledger_example.json"
+        - "DTM/Global/global_math_proof_example.json"
+        - "DTM/Hourly/hourly_math_proof_example.json"
+        - "Looping/Global/global_submission_example.json"
+        - "Looping/Hourly/hourly_submission_example.json"
+      component_reports_and_errors:
+        - "Brain/Global/global_brain_report_example.json"
+        - "Brain/Hourly/hourly_brain_report_example.json"
+        - "Brainstem/Global/global_brainstem_report_example.json"
+        - "Brainstem/Hourly/hourly_brainstem_report_example.json"
+        - "DTM/Global/global_dtm_report_example.json"
+        - "DTM/Hourly/hourly_dtm_report_example.json"
+        - "Looping/Global/global_looping_report_example.json"
+        - "Looping/Hourly/hourly_looping_report_example.json"
+        - "Miners/Global/global_mining_process_report_example.json"
+        - "Miners/Hourly/hourly_mining_process_report_example.json"
+        - "Brain/Global/global_brain_error_example.json"
+        - "Brain/Hourly/hourly_brain_error_example.json"
+        - "Brainstem/Global/global_brainstem_error_example.json"
+        - "Brainstem/Hourly/hourly_brainstem_error_example.json"
+        - "DTM/Global/global_dtm_error_example.json"
+        - "DTM/Hourly/hourly_dtm_error_example.json"
+        - "Looping/Global/global_looping_error_example.json"
+        - "Looping/Hourly/hourly_looping_error_example.json"
+        - "Miners/Global/global_mining_process_error_example.json"
+        - "Miners/Hourly/hourly_mining_process_error_example.json"
+      aggregated_ledgers:
+        - "Ledgers/Aggregated/global_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Year/year_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Month/month_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Week/week_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Day/day_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Hour/hourly_ledger_aggregated_example.json"
+      aggregated_submission_logs:
+        - "Submission_Logs/Aggregated/global_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Year/year_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Month/month_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Week/week_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Day/day_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Hour/hourly_submission_log_aggregated_example.json"
+      aggregated_system_reports:
+        - "System_Reports/Aggregated/Global/global_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Year/year_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Month/month_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Week/week_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Day/day_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Hour/hourly_aggregated_report_example.json"
+      aggregated_error_reports:
+        - "Error_Reports/Aggregated/Global/global_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Year/year_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Month/month_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Week/week_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Day/day_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Hour/hourly_aggregated_error_example.json"
+      aggregated_system_logs:
+        - "System_Logs/Aggregated/Global/global_aggregated_log_example.json"
+        - "System_Logs/Aggregated/Hourly/hourly_aggregated_log_example.json"
+      aggregated_indices:
+        - "Ledgers/Aggregated_Index/aggregated_index_root_example.json"
+        - "Ledgers/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Ledgers/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Ledgers/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Ledgers/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Ledgers/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Submission_Logs/Aggregated_Index/aggregated_index_root_example.json"
+        - "Submission_Logs/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Submission_Logs/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Submission_Logs/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Submission_Logs/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Submission_Logs/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "System_Reports/Aggregated_Index/aggregated_index_root_example.json"
+        - "System_Reports/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "System_Reports/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "System_Reports/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "System_Reports/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "System_Reports/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Error_Reports/Aggregated_Index/aggregated_index_root_example.json"
+        - "Error_Reports/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Error_Reports/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Error_Reports/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Error_Reports/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Error_Reports/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Global_Aggregated/Aggregated_Index/aggregated_index_root_example.json"
+        - "Global_Aggregated/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Global_Aggregated/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Global_Aggregated/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Global_Aggregated/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Global_Aggregated/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+      global_aggregated_payloads:
+        - "Global_Aggregated/Aggregated/global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Year/year_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Month/month_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Week/week_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Day/day_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Hour/hourly_global_aggregated_payload_example.json"
+    synchronization:
+      rule: "ALL file outputs MUST match System_File_Examples structure"
+      enforcement: "brain_save_* functions load templates and populate them"
+      update_propagation: "Changing System_File_Examples template automatically updates all future outputs"
+  
+  ledger_operations:
+    function: "brain_save_ledger(entry_data, component_name)"
+    description: "Saves ledger entry with automatic hierarchical Year/Month/Week/Day structure"
+    writes_to:
+      - "Mining/Ledgers/global_ledger.json"
+      - "Mining/Ledgers/YYYY/global_ledger_YYYY.json"
+      - "Mining/Ledgers/YYYY/MM/global_ledger_MM.json"
+      - "Mining/Ledgers/YYYY/MM/W{WW}/global_ledger_W{WW}.json"
+      - "Mining/Ledgers/YYYY/MM/DD/global_ledger_DD.json"
+      - "Mining/Ledgers/YYYY/MM/DD/HH/hourly_ledger.json"
+    used_by:
+      - "Looping"
+      - "DTM"
+      - "Production_Miner"
+  
+  math_proof_operations:
+    function: "brain_save_math_proof(proof_data, component_name)"
+    description: "Saves math proof with automatic hierarchical structure"
+    writes_to:
+      - "Mining/Ledgers/global_math_proof.json"
+      - "Mining/Ledgers/YYYY/global_math_proof_YYYY.json"
+      - "Mining/Ledgers/YYYY/MM/global_math_proof_MM.json"
+      - "Mining/Ledgers/YYYY/MM/W{WW}/global_math_proof_W{WW}.json"
+      - "Mining/Ledgers/YYYY/MM/DD/global_math_proof_DD.json"
+      - "Mining/Ledgers/YYYY/MM/DD/HH/hourly_math_proof.json"
+    used_by:
+      - "Looping"
+      - "DTM"
+      - "Production_Miner"
+  
+  submission_operations:
+    function: "brain_save_submission(submission_data, component_name)"
+    description: "Saves submission with automatic hierarchical structure"
+    writes_to:
+      - "Mining/Submission_Logs/global_submission.json"
+      - "Mining/Submission_Logs/YYYY/global_submission_YYYY.json"
+      - "Mining/Submission_Logs/YYYY/MM/global_submission_MM.json"
+      - "Mining/Submission_Logs/YYYY/MM/W{WW}/global_submission_W{WW}.json"
+      - "Mining/Submission_Logs/YYYY/MM/DD/global_submission_DD.json"
+      - "Mining/Submission_Logs/YYYY/MM/DD/HH/hourly_submission.json"
+    used_by:
+      - "Looping"
+      - "Production_Miner"
+  
+  system_report_operations:
+    function: "brain_save_system_report(report_data, component_name, report_type)"
+    description: "Saves system reports (status, errors, performance) with component organization"
+    writes_to:
+      - "Mining/System/System_Reports/{component}/Global/global_{component}_report.json"
+      - "Mining/System/System_Reports/{component}/Hourly/YYYY/MM/DD/HH/hourly_{component}_report.json"
+    used_by:
+      - "Brain"
+      - "Brainstem"
+      - "Looping"
+      - "DTM"
+      - "Miners"
+  
+  enforcement:
+    rule: "ALL components MUST import and use brain_save_* functions"
+    violation: "Direct file writes bypass hierarchical structure and break system integrity"
+    migration: "Replace all json.dump() calls with appropriate brain_save_* function"
+  
+  aggregated_index_system:
+    description: "Automatic rollup indices at every hierarchical level"
+    function: "brain_update_aggregated_index(level, data)"
+    levels:
+      - "Root: aggregated_index.json (contains ALL data across all time)"
+      - "Year: YYYY/aggregated_index_YYYY.json (contains year + all months/weeks/days)"
+      - "Month: YYYY/MM/aggregated_index_MM.json (contains month + all weeks/days)"
+      - "Week: YYYY/MM/W{WW}/aggregated_index_W{WW}.json (contains week + all days)"
+      - "Day: YYYY/MM/DD/aggregated_index_DD.json (contains day + all hours)"
+      - "Hour: YYYY/MM/DD/HH/aggregated_index_HH.json (contains hour only)"
+    automatic_update: "Every brain_save_* call updates aggregated indices at all levels"
+    used_for: "Quick lookups, statistics, rollups without scanning individual files"
+  
+  system_file_examples:
+    location: "System_File_Examples/"
+    purpose: "Template definitions that control ALL file output formats"
+    auto_generation: "brain_initialize_mode() creates folder and templates if missing"
+    synchronization:
+      - "ALL brain_save_* functions load templates from System_File_Examples"
+      - "Changing template structure automatically updates all future saves"
+      - "Templates define metadata, structure, and default values"
+    required_templates:
+      base_payloads:
+        - "DTM/Global/global_ledger_example.json"
+        - "DTM/Hourly/hourly_ledger_example.json"
+        - "DTM/Global/global_math_proof_example.json"
+        - "DTM/Hourly/hourly_math_proof_example.json"
+        - "Looping/Global/global_submission_example.json"
+        - "Looping/Hourly/hourly_submission_example.json"
+      component_reports_and_errors:
+        - "Brain/Global/global_brain_report_example.json"
+        - "Brain/Hourly/hourly_brain_report_example.json"
+        - "Brainstem/Global/global_brainstem_report_example.json"
+        - "Brainstem/Hourly/hourly_brainstem_report_example.json"
+        - "DTM/Global/global_dtm_report_example.json"
+        - "DTM/Hourly/hourly_dtm_report_example.json"
+        - "Looping/Global/global_looping_report_example.json"
+        - "Looping/Hourly/hourly_looping_report_example.json"
+        - "Miners/Global/global_mining_process_report_example.json"
+        - "Miners/Hourly/hourly_mining_process_report_example.json"
+        - "Brain/Global/global_brain_error_example.json"
+        - "Brain/Hourly/hourly_brain_error_example.json"
+        - "Brainstem/Global/global_brainstem_error_example.json"
+        - "Brainstem/Hourly/hourly_brainstem_error_example.json"
+        - "DTM/Global/global_dtm_error_example.json"
+        - "DTM/Hourly/hourly_dtm_error_example.json"
+        - "Looping/Global/global_looping_error_example.json"
+        - "Looping/Hourly/hourly_looping_error_example.json"
+        - "Miners/Global/global_mining_process_error_example.json"
+        - "Miners/Hourly/hourly_mining_process_error_example.json"
+      aggregated_ledgers:
+        - "Ledgers/Aggregated/global_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Year/year_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Month/month_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Week/week_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Day/day_ledger_aggregated_example.json"
+        - "Ledgers/Aggregated/Hour/hourly_ledger_aggregated_example.json"
+      aggregated_submission_logs:
+        - "Submission_Logs/Aggregated/global_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Year/year_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Month/month_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Week/week_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Day/day_submission_log_aggregated_example.json"
+        - "Submission_Logs/Aggregated/Hour/hourly_submission_log_aggregated_example.json"
+      aggregated_system_reports:
+        - "System_Reports/Aggregated/Global/global_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Year/year_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Month/month_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Week/week_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Day/day_aggregated_report_example.json"
+        - "System_Reports/Aggregated/Hour/hourly_aggregated_report_example.json"
+      aggregated_error_reports:
+        - "Error_Reports/Aggregated/Global/global_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Year/year_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Month/month_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Week/week_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Day/day_aggregated_error_example.json"
+        - "Error_Reports/Aggregated/Hour/hourly_aggregated_error_example.json"
+      aggregated_system_logs:
+        - "System_Logs/Aggregated/Global/global_aggregated_log_example.json"
+        - "System_Logs/Aggregated/Hourly/hourly_aggregated_log_example.json"
+      aggregated_indices:
+        - "Ledgers/Aggregated_Index/aggregated_index_root_example.json"
+        - "Ledgers/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Ledgers/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Ledgers/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Ledgers/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Ledgers/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Submission_Logs/Aggregated_Index/aggregated_index_root_example.json"
+        - "Submission_Logs/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Submission_Logs/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Submission_Logs/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Submission_Logs/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Submission_Logs/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "System_Reports/Aggregated_Index/aggregated_index_root_example.json"
+        - "System_Reports/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "System_Reports/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "System_Reports/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "System_Reports/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "System_Reports/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Error_Reports/Aggregated_Index/aggregated_index_root_example.json"
+        - "Error_Reports/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Error_Reports/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Error_Reports/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Error_Reports/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Error_Reports/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+        - "Global_Aggregated/Aggregated_Index/aggregated_index_root_example.json"
+        - "Global_Aggregated/Aggregated_Index/Year/aggregated_index_year_example.json"
+        - "Global_Aggregated/Aggregated_Index/Month/aggregated_index_month_example.json"
+        - "Global_Aggregated/Aggregated_Index/Week/aggregated_index_week_example.json"
+        - "Global_Aggregated/Aggregated_Index/Day/aggregated_index_day_example.json"
+        - "Global_Aggregated/Aggregated_Index/Hour/aggregated_index_hour_example.json"
+      global_aggregated_payloads:
+        - "Global_Aggregated/Aggregated/global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Year/year_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Month/month_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Week/week_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Day/day_global_aggregated_payload_example.json"
+        - "Global_Aggregated/Aggregated/Hour/hourly_global_aggregated_payload_example.json"
+
+# ========================================================================
+# SMOKE TEST BEHAVIOR - GLOBAL LOGIC FOR ALL COMPONENTS
+# ========================================================================
+smoke_test_behavior:
+  description: "Global smoke test definitions - all components inherit this logic"
+  philosophy: "Brain defines smoke test behavior, components execute it - single source of truth"
+  
+  smoke_test:
+    flag: "--smoke-test"
+    applies_to: ["miner", "dtm", "brainstem", "looping"]
+    behavior:
+      - "Test individual component functionality"
+      - "Validate file creation and structure"
+      - "Check mathematical operations"
+      - "Verify configuration loading"
+      - "Test error handling"
+    exit_on_failure: true
+    
+  smoke_network_test:
+    flag: "--smoke-network"
+    applies_to: ["looping", "miner", "dtm", "brainstem"] 
+    behavior:
+      - "Test all components in network mode"
+      - "Validate DTM template creation and distribution"
+      - "Check system report generation across all components"
+      - "Verify error report creation and logging"
+      - "Test coordination between Brain, Brainstem, DTM, Looping, and Miners"
+      - "Validate hierarchical file structure creation"
+      - "Test mathematical framework initialization"
+      - "Check ZMQ communication between components"
+    comprehensive_tests:
+      dtm_validation:
+        - "Template creation and validation"
+        - "GPS enhancement functionality"
+        - "Mathematical proof generation"
+        - "Hierarchical ledger creation"
+      system_reports:
+        - "System report generation by each component"
+        - "Error report creation and logging"
+        - "Aggregated index updates"
+        - "File structure validation"
+      coordination:
+        - "Brain.QTL blueprint loading"
+        - "Component communication via coordination files"
+        - "Multi-daemon synchronization"
+        - "Process management validation"
+    exit_on_failure: true
+    timeout: 300  # 5 minutes max for comprehensive test
+
+redirect:
+  blueprint: "Singularity_Dave_Brain.QTL"
+  instructions:
+    - "Legacy alias brain.qtl has been retired from the runtime bundle."
+    - "Update any custom tooling to reference Singularity_Dave_Brain.QTL directly."

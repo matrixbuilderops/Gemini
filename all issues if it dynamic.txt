@@ -1,0 +1,6 @@
+all issues if it dynamic tempalte manger did not do its' job, it was not an acutal soltuion, loopin gfiailed  . the conssusm mencahism faield . whatever for any of this ther eshoudl be a fodler madke calle dUser clook and all of the bad stuff is there. for demo and test  thiss fodler woudl be insideo of system fodler. for sataging and lvie int woudl be sindoe fo teh root sytem fodler. 
+
+also it is caled the temporary tempatle fodler because of each new block the looping fiel shoudl delte teh conents fol the fodler.
+
+also teh sytem shoudl be seutp to use my real math foall modes, use allof my flags an so tha tyou don';t have updat teh math or the falgs or the oflder sytem per mode.
+also 

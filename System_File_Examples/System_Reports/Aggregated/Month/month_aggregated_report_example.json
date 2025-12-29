@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "level": "month",
+    "year": "2025",
+    "month": "12",
+    "purpose": "Month-level aggregation from all components"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "month": "12",
+  "total_reports": 0,
+  "reports_by_component": {
+    "Brain": 0,
+    "Brainstem": 0,
+    "DTM": 0,
+    "Looping": 0,
+    "Miners": 0
+  },
+  "entries": []
+}

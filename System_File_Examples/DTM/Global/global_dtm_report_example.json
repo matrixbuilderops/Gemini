@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "created_by": "DTM",
+    "version": "1.0"
+  },
+  "total_templates_processed": 150,
+  "total_validations_performed": 3,
+  "total_solutions_found": 3,
+  "reports": [
+    {
+      "report_id": "dtm_report_001",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "templates_processed": 1,
+      "solutions_validated": 1,
+      "consensus_decisions": 1
+    }
+  ]
+}

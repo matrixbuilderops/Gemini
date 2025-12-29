@@ -1,0 +1,31 @@
+Flags
+Block (1-144)
+Blocks -all
+Days -all
+Daemons (#)
+Weeks (#)
+Years (#)
+
+Random block (1-44)
+
+
+Mode-
+example 2 blocks 2 days
+Continuous -1 - the miners will keep mining the blocks for the day but turn off after the day and looping will reactive them.
+Continuous-2 the miners will stay active for both days until the flag of the mining request is finished
+Always on - after the 2 days the miners will keep running until told to turn off
+On demand - the mierns will turn off after each blcok the loopign will wake them up for the next block 40 minutes prior
+
+
+Defaults
+Continuous-2
+Daemons-adative to user hardware
+if day is not specifed it is assuemd until the end of the day
+
+
+any mining request can not be more then 144 blocks since that is the maxium number of blocks per day and can only be achived if you started miing right at the start of the day. so what the sytem shoudl do if the user picks something eithe rover 144 or 144 but at a time when that is not possible liek 3pm. it should make the request the highest possible within that time.
+
+as in if the user says i want 144 and it is 11:50 at night then it will be 1 block.
+normal blocks is mined one after the other
+random blocks is you tell the styem how many blcosk you ant that day and it divies teh day up itin sectiosn and miens randomly through the day . all mining attemps use zmq for coordination espeiclay when the sytem is wakign the miers back up or mingin that is takign over the span of a day or multiple days. 
+

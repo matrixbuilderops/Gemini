@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "file_type": "rejection_tracking",
+    "created_by": "DTM",
+    "purpose": "Track invalid blocks and rejection reasons",
+    "created": "2025-12-10T00:00:00.000000Z"
+  },
+  "summary": {
+    "total_rejections": 0,
+    "rejections_by_reason": {
+      "invalid_difficulty": 0,
+      "invalid_merkle": 0,
+      "invalid_nonce": 0,
+      "network_error": 0
+    }
+  },
+  "entries": []
+}

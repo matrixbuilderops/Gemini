@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "created_by": "ALL Miners",
+    "version": "1.0"
+  },
+  "total_hashes": 150000000000,
+  "total_miners": 5,
+  "total_blocks_found": 3,
+  "miners": [
+    {
+      "miner_id": "miner_001",
+      "total_hashes": 50000000000,
+      "blocks_found": 1,
+      "average_hash_rate": 1250000,
+      "uptime_hours": 240
+    }
+  ]
+}

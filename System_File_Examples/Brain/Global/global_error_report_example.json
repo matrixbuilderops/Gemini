@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "purpose": "Master error aggregation from all components",
+    "version": "1.0"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "last_aggregation": "2025-11-30T06:00:05.000000Z",
+  "total_errors": 5,
+  "errors_by_component": {
+    "brain": 1,
+    "brainstem": 1,
+    "dtm": 1,
+    "looping": 1,
+    "miners": 1
+  },
+  "errors_by_severity": {
+    "critical": 1,
+    "error": 2,
+    "warning": 2
+  },
+  "errors_by_type": {
+    "submission_rejected": 1,
+    "validation_failed": 1,
+    "mining_timeout": 1,
+    "aggregation_delay": 1,
+    "folder_creation_failed": 1
+  },
+  "recent_errors": [
+    {
+      "error_id": "loop_err_001",
+      "component": "Looping",
+      "severity": "critical",
+      "error_type": "submission_rejected",
+      "timestamp": "2025-11-30T06:00:05.000000Z",
+      "message": "Bitcoin Core rejected block submission"
+    },
+    {
+      "error_id": "dtm_err_001",
+      "component": "DTM",
+      "severity": "error",
+      "error_type": "validation_failed",
+      "timestamp": "2025-11-30T06:00:00.000000Z",
+      "message": "Solution failed difficulty check"
+    }
+  ]
+}

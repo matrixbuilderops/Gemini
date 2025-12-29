@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "created_by": "Brain",
+    "level": "hourly",
+    "year": "2025",
+    "month": "12",
+    "day": "12",
+    "hour": "22",
+    "purpose": "Hourly aggregation from all components"
+  },
+  "aggregated_from": [
+    "Brain",
+    "Brainstem",
+    "DTM",
+    "Looping",
+    "Miners"
+  ],
+  "hour": "22",
+  "total_reports": 0,
+  "reports_by_component": {
+    "Brain": 0,
+    "Brainstem": 0,
+    "DTM": 0,
+    "Looping": 0,
+    "Miners": 0
+  },
+  "entries": []
+}
