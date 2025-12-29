@@ -95,7 +95,7 @@ def defensive_write_json(filepath: str, data: dict, component_name: str = "UNKNO
         
         # Layer 1: Try backup directory
         try:
-            backup_dir = os.path.join("Mining", "Backup_Logs", component_name)
+            backup_dir = os.path.join(brain_get_base_path(), "Backup_Logs", component_name)
             os.makedirs(backup_dir, exist_ok=True)
             backup_file = os.path.join(backup_dir, os.path.basename(filepath))
             with open(backup_file, 'w') as f:
@@ -107,7 +107,7 @@ def defensive_write_json(filepath: str, data: dict, component_name: str = "UNKNO
             
             # Layer 2: Try emergency text log
             try:
-                emergency_dir = os.path.join("Mining", "Emergency_Logs")
+                emergency_dir = os.path.join(brain_get_base_path(), "Emergency_Logs")
                 os.makedirs(emergency_dir, exist_ok=True)
                 emergency_file = os.path.join(emergency_dir, f"{component_name}_emergency.log")
                 with open(emergency_file, 'a') as f:
@@ -322,8 +322,9 @@ def report_dtm_error(error_type, severity, message, context=None, recovery_actio
     import traceback
     
     now = datetime.now()
-    base_root = Path(base_dir) if base_dir else Path(brain_get_base_path()) / "System" / "Error_Reports" / "DTM"
-    week = f"W{now.strftime('%W')}"
+    # Use brain_get_path for dynamic resolution
+    base_root = Path(brain_get_path("dtm_error_reports"))
+    week = now.strftime('%W')
     error_id = f"dtm_err_{now.strftime('%Y%m%d_%H%M%S')}_{random.randint(1000,9999)}"
     
     # Build comprehensive error entry
@@ -378,8 +379,10 @@ def report_dtm_error(error_type, severity, message, context=None, recovery_actio
     
     # === HOURLY ERROR FILE (Mining/DTM/YYYY/MM/DD/HH/hourly_dtm_error.json) ===
     try:
-        hourly_dir = base_root / f"{now.year}" / f"{now.month:02d}" / week / f"{now.day:02d}" / f"{now.hour:02d}"
-        hourly_error_file = hourly_dir / "hourly_dtm_error.json"
+        # Dynamically get the hourly path
+        hourly_error_path_str = brain_get_path("hourly_dtm_error", custom_timestamp=now.isoformat())
+        hourly_error_file = Path(hourly_error_path_str)
+        hourly_dir = hourly_error_file.parent
         
         # Load existing or create from template
         if os.path.exists(hourly_error_file):
@@ -434,8 +437,9 @@ def report_dtm_status(templates_processed=0, validations=0, solutions_found=0, c
         consensus_decisions: Number of consensus decisions made
     """
     now = datetime.now()
-    base_root = Path(base_dir) if base_dir else Path(brain_get_base_path()) / "System" / "System_Reports" / "DTM"
-    week = f"W{now.strftime('%W')}"
+    # Use brain_get_path for dynamic resolution
+    base_root = Path(brain_get_path("dtm_system_reports"))
+    week = now.strftime('%W')
     report_id = f"dtm_report_{now.strftime('%Y%m%d_%H%M%S')}"
     
     # Build comprehensive report entry
@@ -489,8 +493,10 @@ def report_dtm_status(templates_processed=0, validations=0, solutions_found=0, c
     
     # === HOURLY REPORT FILE ===
     try:
-        hourly_dir = base_root / f"{now.year}" / f"{now.month:02d}" / week / f"{now.day:02d}" / f"{now.hour:02d}"
-        hourly_report_file = hourly_dir / "hourly_dtm_report.json"
+        # Dynamically get the hourly path
+        hourly_report_path_str = brain_get_path("hourly_dtm_report", custom_timestamp=now.isoformat())
+        hourly_report_file = Path(hourly_report_path_str)
+        hourly_dir = hourly_report_file.parent
         
         # Load existing or create from template
         if os.path.exists(hourly_report_file):
@@ -552,27 +558,13 @@ def _get_mode_from_flags(flags: list) -> str:
         return 'production_mode'
 
 def get_brain_qtl_paths_dtm(flags: list = None) -> dict:
-    """Get paths from Brain.QTL based on flags - DTM NEVER creates folders"""
-    brain_data = _load_brain_qtl()
-    if not brain_data:
-        # Defensive fallback
-        return {
-            'temporary_template': 'Mining/Temporary/Template',
-            'ledgers': 'Mining',  # Per architecture: files go in Mining/ root
-            'base_path': 'Mining'
-        }
-    
-    flag_mapping = brain_data.get('folder_management', {}).get('flag_mode_mapping', {})
-    if flags:
-        mode = _get_mode_from_flags(flags)
-        mode_config = flag_mapping.get(mode, flag_mapping.get('production_mode', {}))
-    else:
-        mode_config = flag_mapping.get('production_mode', {})
-    
+    """Get paths from Brain.QTL using the centralized brainstem functions."""
+    # This function now acts as a wrapper around the brain_get_path calls.
+    # The mode is handled by brain_set_mode at startup.
     return {
-        'temporary_template': mode_config.get('temporary_template', 'Mining/Temporary/Template'),
-        'ledgers': mode_config.get('ledgers', 'Mining'),  # Per architecture: files go in Mining/ root
-        'base_path': mode_config.get('base_path', 'Mining')
+        'temporary_template': brain_get_path('temporary_template_dir'),
+        'ledgers': brain_get_path('ledgers_dir'),
+        'base_path': brain_get_base_path()
     }
 
 def validate_folder_exists_dtm(folder_path: str, component_name: str = "DTM") -> bool:
@@ -1319,9 +1311,12 @@ class GPSEnhancedDynamicTemplateManager:
         ledger_template = read_example("Ledger_Global_example.json")
         math_proof_template = read_example("Math_Proof_example.json")
         
-        # DTM's global files - PROPER LOCATION: Mining/Ledgers/
+        # DTM's global files - get paths dynamically
+        global_ledger_path = brain_get_path("global_ledger")
+        global_math_proof_path = brain_get_path("global_math_proof")
+
         dtm_files = {
-            str(base_root / "Ledgers" / "global_ledger.json"): ledger_template or {
+            global_ledger_path: ledger_template or {
                 "metadata": {"file_type": "global_ledger", "created": timestamp, "owned_by": "DTM"},
                 "total_hashes": 0,
                 "total_blocks_found": 0,
@@ -1337,22 +1332,22 @@ class GPSEnhancedDynamicTemplateManager:
                 },
                 "entries": []
             },
-            str(base_root / "Ledgers" / "global_math_proof.json"): math_proof_template or {
+            global_math_proof_path: math_proof_template or {
                 "metadata": {"file_type": "math_proof", "created": timestamp, "owned_by": "DTM"},
                 "total_proofs": 0,
                 "proofs": []
             }
         }
         
-        # DTM's hourly files - week-nested: Mining/Ledgers/Year/Month/WXX/Day/Hour/
-        week = f"W{now.strftime('%W')}"
-        mining_hourly_dir = base_root / "Ledgers" / f"{now.year}" / f"{now.month:02d}" / week / f"{now.day:02d}" / f"{now.hour:02d}"
+        # DTM's hourly files - get paths dynamically
+        hourly_ledger_path = brain_get_path("hourly_ledger", custom_timestamp=now.isoformat())
+        mining_hourly_dir = Path(hourly_ledger_path).parent
         mining_hourly_dir.mkdir(parents=True, exist_ok=True)
-        
+
         hourly_ledger_template = read_example("Ledger_Hourly_example.json")
         hourly_math_proof_template = read_example("Math_Proof_Hourly_example.json")
         
-        dtm_files[str(mining_hourly_dir / "hourly_ledger.json")] = hourly_ledger_template or {
+        dtm_files[hourly_ledger_path] = hourly_ledger_template or {
             "metadata": {"file_type": "hourly_ledger", "created": timestamp, "hour": now.hour, "owned_by": "DTM"},
             "hour": f"{now.year}-{now.month:02d}-{now.day:02d}_{now.hour:02d}",
             "hashes_this_hour": 0,
@@ -1360,7 +1355,8 @@ class GPSEnhancedDynamicTemplateManager:
             "blocks": []
         }
         
-        dtm_files[str(mining_hourly_dir / "hourly_math_proof.json")] = hourly_math_proof_template or {
+        hourly_math_proof_path = brain_get_path("hourly_math_proof", custom_timestamp=now.isoformat())
+        dtm_files[hourly_math_proof_path] = hourly_math_proof_template or {
             "metadata": {"file_type": "hourly_math_proof", "created": timestamp, "hour": now.hour, "owned_by": "DTM"},
             "hour": f"{now.year}-{now.month:02d}-{now.day:02d}_{now.hour:02d}",
             "proofs_this_hour": 0,
@@ -1381,28 +1377,21 @@ class GPSEnhancedDynamicTemplateManager:
             print(f"✅ DTM tracking files initialized (Ledger & Math Proof)")
     
     def _get_mode_base_path(self) -> str:
-        """Get the base path based on operating mode (Test/Demo, Test/Test mode, or Mining)"""
-        try:
-            return brain_get_base_path()
-        except Exception:
-            if hasattr(self, 'demo_mode') and self.demo_mode:
-                return "Test/Demo"
-            elif hasattr(self, 'test_mode') and getattr(self, 'test_mode', False):
-                return "Test/Test mode"
-            return "Mining"
+        """Get the base path using the centralized brainstem function."""
+        # This is now the single source of truth for the base path.
+        return brain_get_base_path()
     
     def _get_ledger_path(self) -> Path:
-        """Get mode-aware ledger path - returns Mining/ root per architecture"""
-        # Per architecture: global and hourly files go in Mining/ root, not Mining/Ledgers/
-        return Path(self._mode_base_path)
+        """Get mode-aware ledger path from brainstem."""
+        return Path(brain_get_path("ledgers_dir"))
     
     def _get_system_path(self) -> Path:
-        """Get mode-aware system path"""
-        return Path(self._mode_base_path) / "System"
+        """Get mode-aware system path from brainstem."""
+        return Path(brain_get_path("system_dir"))
     
     def _get_submission_path(self) -> Path:
-        """Get mode-aware submission path"""
-        return Path(self._mode_base_path) / "Submission"
+        """Get mode-aware submission path from brainstem."""
+        return Path(brain_get_path("submissions_dir"))
 
     def _validate_initialization_parameters(
         self, verbose: bool, demo_mode: bool, auto_initialize: bool,
@@ -2698,18 +2687,8 @@ class GPSEnhancedDynamicTemplateManager:
         )
 
     def get_temporary_template_root(self) -> Path:
-        """Resolve the directory used for daemon temporary templates (Temporary/Template)."""
-        if self.brain_path_provider:
-            return to_absolute_from_string(
-                self.brain_path_provider("temporary_template_dir", self.environment)
-            )
-        env = (self.environment or "Mining").strip()
-        components = [part for part in env.replace("\\", "/").split("/") if part]
-        fallback = Path("System")
-        for part in components:
-            fallback /= part
-        fallback /= "Temporary/Template"
-        return to_absolute_path(fallback)
+        """Resolve the directory for temporary templates using brainstem."""
+        return Path(brain_get_path("temporary_template_dir"))
 
     def update_hourly_folder(self):
         """Create new hourly folder if hour has changed"""
@@ -4827,12 +4806,8 @@ class GPSEnhancedDynamicTemplateManager:
         """Clean up old template files - uses Brain.QTL managed paths"""
         try:
             # Use Brain.QTL output directory instead of template-specific folders
-            if self.brain_path_provider:
-                base_path_obj = to_absolute_from_string(
-                    self.brain_path_provider("output", self.environment)
-                )
-            else:
-                base_path_obj = to_absolute_from_string("Mining/Output")
+            # Use brain_get_path for dynamic resolution
+            base_path_obj = to_absolute_from_string(brain_get_path("output_dir"))
 
             if not base_path_obj.exists():
                 print("ℹ️ No output directory found for cleanup")
@@ -4881,11 +4856,8 @@ class GPSEnhancedDynamicTemplateManager:
             from pathlib import Path
             import json
             
-            # 🎯 MODE-AWARE: Use correct path based on demo mode
-            if self.demo_mode:
-                temp_template_dir = Path("Test/Demo/Temporary/Template")
-            else:
-                temp_template_dir = Path("Mining/Temporary/Template")
+            # Get path dynamically from brainstem
+            temp_template_dir = Path(brain_get_path("temporary_template_dir"))
             
             if not temp_template_dir.exists():
                 if self.verbose:
@@ -4961,30 +4933,30 @@ class GPSEnhancedDynamicTemplateManager:
                                     if self.verbose:
                                         print(f"❌ Invalid solution from {subfolder.name}: {error_reason}")
                                     
-                                    # Save bad stuff to User_Look_at folder per user requirement
+                                    # Save bad solutions to 'User_Look_at' as per requirements
                                     try:
-                                        user_look_path = Path(brain_get_path("user_look_at", "DTM"))
-                                        bad_file = user_look_path / f"bad_solution_{subfolder.name}_{int(time.time())}.json"
+                                        user_look_at_path = Path(brain_get_path("user_look_at"))
+                                        user_look_at_path.mkdir(parents=True, exist_ok=True)
+                                        bad_solution_file = user_look_at_path / f"bad_solution_{subfolder.name}_{int(time.time())}.json"
                                         
-                                        # Detailed error context for the user
                                         error_context = {
                                             "miner_id": subfolder.name,
-                                            "error": error_reason,
-                                            "miner_zeros": validated_solution.get("miner_zeros"),
-                                            "required_zeros": validated_solution.get("required_zeros"),
+                                            "error_reason": error_reason,
                                             "solution_data": solution_data,
-                                            "template_height": self.current_template.get("height") if self.current_template else None,
-                                            "timestamp": current_timestamp(),
-                                            "status": "ISSUE_NOT_ADDRESSED" # For the user to track
+                                            "template_data": self.current_template,
+                                            "timestamp": datetime.now().isoformat(),
+                                            "status": "NEEDS_REVIEW"
                                         }
+
+                                        with open(bad_solution_file, 'w') as f:
+                                            json.dump(error_context, f, indent=2)
                                         
-                                        with open(bad_file, 'w') as bf:
-                                            json.dump(error_context, bf, indent=2)
                                         if self.verbose:
-                                            print(f"💾 Detailed error report saved to: {bad_file}")
-                                    except Exception as ble:
+                                            print(f"💾 Bad solution from {subfolder.name} saved to {bad_solution_file}")
+
+                                    except Exception as e:
                                         if self.verbose:
-                                            print(f"⚠️ Could not save bad solution to User_Look_at: {ble}")
+                                            print(f"⚠️ Could not save bad solution to User_Look_at folder: {e}")
 
                                     # Give feedback to losing miner as per Pipeline flow.txt
                                     # Provide EXACT mathematical reason
@@ -5101,7 +5073,7 @@ class GPSEnhancedDynamicTemplateManager:
             from pathlib import Path
             import json
             
-            temp_template_dir = Path(self._mode_base_path) / "Temporary/Template"
+            temp_template_dir = Path(brain_get_path("temporary_template_dir"))
             if not temp_template_dir.exists():
                 return None
             
@@ -5156,19 +5128,30 @@ class GPSEnhancedDynamicTemplateManager:
                                         validation_error = validated_solution.get('error', 'Unknown validation error')
                                         print(f"❌ Invalid solution from {subfolder.name}: {validation_error}")
                                     
-                                    # Save bad stuff to User_Look_at folder per user requirement
+                                    # Save bad solutions to 'User_Look_at' as per requirements
                                     try:
-                                        user_look_path = Path(brain_get_path("user_look_at", "DTM"))
-                                        bad_file = user_look_path / f"bad_solution_{subfolder.name}_{int(time.time())}.json"
-                                        with open(bad_file, 'w') as bf:
-                                            json.dump({
-                                                "miner_id": subfolder.name,
-                                                "error": validated_solution.get('error'),
-                                                "solution_data": solution_data,
-                                                "timestamp": current_timestamp()
-                                            }, bf, indent=2)
-                                    except Exception:
-                                        pass
+                                        user_look_at_path = Path(brain_get_path("user_look_at"))
+                                        user_look_at_path.mkdir(parents=True, exist_ok=True)
+                                        bad_solution_file = user_look_at_path / f"bad_solution_{subfolder.name}_{int(time.time())}.json"
+
+                                        error_context = {
+                                            "miner_id": subfolder.name,
+                                            "error_reason": validated_solution.get('error', 'Unknown validation error'),
+                                            "solution_data": solution_data,
+                                            "template_data": self.current_template,
+                                            "timestamp": datetime.now().isoformat(),
+                                            "status": "NEEDS_REVIEW"
+                                        }
+
+                                        with open(bad_solution_file, 'w') as f:
+                                            json.dump(error_context, f, indent=2)
+
+                                        if self.verbose:
+                                            print(f"💾 Bad solution from {subfolder.name} saved to {bad_solution_file}")
+
+                                    except Exception as e:
+                                        if self.verbose:
+                                            print(f"⚠️ Could not save bad solution to User_Look_at folder: {e}")
 
                                     # Provide comprehensive feedback to failing miner
                                     self._provide_miner_feedback(subfolder.name, validated_solution)
@@ -6028,7 +6011,7 @@ class GPSEnhancedDynamicTemplateManager:
     def _provide_miner_feedback(self, miner_id, validation_result):
         """Provide detailed feedback to miners per Pipeline flow.txt: 'tells it why it is bad'"""
         try:
-            feedback_dir = Path("Mining/Temporary/Template") / miner_id / "feedback"
+            feedback_dir = Path(brain_get_path("temporary_template_dir")) / miner_id / "feedback"
             feedback_dir.mkdir(parents=True, exist_ok=True)
             
             timestamp = int(time.time())
@@ -6044,14 +6027,9 @@ class GPSEnhancedDynamicTemplateManager:
                 print(f"⚠️ Failed to provide feedback to {miner_id}: {e}")
 
 
-    def _get_submission_path(self):
-        """Get submission folder path based on mode."""
-        if hasattr(self, 'demo_mode') and self.demo_mode:
-            return Path("Test/Demo/Mining/Submissions")
-        elif hasattr(self, 'test_mode') and self.test_mode:
-            return Path("Test/Test mode/Mining/Submissions")
-        else:
-            return Path("Mining/Submissions")
+    def _get_submission_path(self) -> Path:
+        """Get mode-aware submission path from brainstem."""
+        return Path(brain_get_path("submissions_dir"))
 
 
     def _create_global_submission_file(self, solution, miner_id):
@@ -6559,8 +6537,11 @@ def _write_dtm_smoke_report(component: str, results: dict, output_path: str) -> 
             return False
 
 
-def run_smoke_test(output_path: str = "Mining/User_Look_At/dtm_smoke_test.json") -> bool:
+def run_smoke_test(output_path: str = None) -> bool:
     """Component-level smoke test for the Dynamic Template Manager."""
+    if output_path is None:
+        output_path = os.path.join(brain_get_path("user_look_at"), "dtm_smoke_test.json")
+
     results = {
         "initialized": False,
         "example_template": False,
@@ -6583,7 +6564,7 @@ def run_smoke_test(output_path: str = "Mining/User_Look_At/dtm_smoke_test.json")
         except Exception:
             results["example_template"] = False
 
-        results["filesystem_ready"] = Path("Mining/Temporary/Template").exists()
+        results["filesystem_ready"] = Path(brain_get_path("temporary_template_dir")).exists()
 
         required_methods = [
             "receive_template_from_looping_file",
@@ -6598,10 +6579,13 @@ def run_smoke_test(output_path: str = "Mining/User_Look_At/dtm_smoke_test.json")
     return all(results.values())
 
 
-def run_smoke_network_test(output_path: str = "Mining/User_Look_At/dtm_smoke_network.json") -> bool:
+def run_smoke_network_test(output_path: str = None) -> bool:
     """Network-level smoke test for DTM plus miner coordination."""
+    if output_path is None:
+        output_path = os.path.join(brain_get_path("user_look_at"), "dtm_smoke_network.json")
+
     results = {
-        "component_smoke": run_smoke_test(output_path),
+        "component_smoke": run_smoke_test(output_path.replace(".json", "_component.json")),
         "miner_interface": False,
         "template_roundtrip": False,
     }
