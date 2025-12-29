@@ -2113,81 +2113,38 @@ class BitcoinLoopingSystem:
             logger.error(f"❌ Failed to update ledger submission status: {e}")
 
     def cleanup_temporary_files_on_new_template(self):
-        """Clean up temporary files when a new template arrives - ledger files are preserved."""
+        """Wipe the temporary template directory when a new template arrives."""
         try:
-            logger.info("🧹 Cleaning up temporary files for new template...")
+            temp_dir = self.get_temporary_template_dir()
+            logger.info(f"🧹 Wiping temporary template directory for new block: {temp_dir}")
             
-            # Define patterns of temporary files to clean up
-            cleanup_patterns = [
-                "daemon_*/temp_*",           # Daemon temporary files
-                "daemon_*/solution_*",       # Old solution files
-                "daemon_*/status_*",         # Old status files  
-                "daemon_*/mining_state_*",   # Temporary mining state
-                "temp_*",                    # General temp files
-                "*.tmp",                     # Temporary files
-                "solution_*",                # Solution files
-                "status_*",                  # Status files
-                "mining_state_*",            # Mining state files
-                "mining_cache_*",            # Mining cache files
-                "nonce_cache_*",             # Nonce cache files
-                "*_temp.json",               # Temporary JSON files
-                "*_cache.json",              # Cache JSON files
-            ]
+            if not temp_dir.exists() or not temp_dir.is_dir():
+                logger.info(f"✅ Directory {temp_dir} does not exist. Nothing to wipe.")
+                return
+
+            item_count = 0
+            for item in temp_dir.iterdir():
+                try:
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+                    item_count += 1
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not delete {item}: {e}")
             
-            # Directories to clean
-            cleanup_dirs = [
-                self.temporary_template_dir,
-                self.get_temporary_template_dir(),
-                Path("Mining/Template"),
-                Path("/tmp/mining_solutions"),
-                Path("/tmp/mining_templates"),
-                Path("."),  # Current working directory (workspace root)
-            ]
-            
-            cleaned_count = 0
-            
-            for cleanup_dir in cleanup_dirs:
-                if cleanup_dir.exists():
-                    for pattern in cleanup_patterns:
-                        # Use glob to find matching files
-                        import glob
-                        pattern_path = cleanup_dir / pattern
-                        matching_files = glob.glob(str(pattern_path))
-                        
-                        for file_path in matching_files:
-                            try:
-                                file_obj = Path(file_path)
-                                if file_obj.is_file():
-                                    file_obj.unlink()
-                                    cleaned_count += 1
-                                elif file_obj.is_dir() and file_obj.name.startswith(('temp_', 'cache_')):
-                                    # Only remove temporary directories, not daemon directories
-                                    import shutil
-                                    shutil.rmtree(file_obj)
-                                    cleaned_count += 1
-                            except Exception as e:
-                                logger.warning(f"⚠️ Could not clean {file_path}: {e}")
-            
-            # Clean daemon folders of temporary files only (preserve ledger files)
-            daemon_base_dir = self.get_temporary_template_dir()
-            if daemon_base_dir.exists():
-                for daemon_dir in daemon_base_dir.glob("daemon_*"):
-                    if daemon_dir.is_dir():
-                        # Only clean temporary files, preserve ledger and important files
-                        for temp_file in daemon_dir.glob("temp_*"):
-                            try:
-                                temp_file.unlink()
-                                cleaned_count += 1
-                            except Exception as e:
-                                logger.warning(f"⚠️ Could not clean {temp_file}: {e}")
-            
-            if cleaned_count > 0:
-                logger.info(f"✅ Cleaned {cleaned_count} temporary files for new template")
+            if item_count > 0:
+                logger.info(f"✅ Wiped {item_count} items from {temp_dir}")
             else:
-                logger.info("✅ No temporary files needed cleaning")
+                logger.info(f"✅ Directory {temp_dir} was already empty.")
                 
         except Exception as e:
-            logger.warning(f"⚠️ Template cleanup failed (non-critical): {e}")
+            report_looping_error(
+                error_type="cleanup_failed",
+                severity="warning",
+                message=f"Failed to wipe temporary template directory: {e}",
+                context={"directory": str(self.get_temporary_template_dir())}
+            )
 
     def reset_temporary_folders(self):
         """
@@ -15655,6 +15612,42 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 
+    def wipe_user_look_at_folder(self):
+        """Wipe all contents of the User_Look_at folder."""
+        try:
+            user_dir = self.user_look_at_dir
+            logger.info(f"🗑️  Wiping User_Look_at folder: {user_dir}")
+
+            if not user_dir.exists() or not user_dir.is_dir():
+                logger.info(f"✅ Directory {user_dir} does not exist. Nothing to wipe.")
+                return True
+
+            item_count = 0
+            for item in user_dir.iterdir():
+                try:
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+                    item_count += 1
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not delete {item}: {e}")
+
+            if item_count > 0:
+                logger.info(f"✅ Wiped {item_count} items from {user_dir}")
+            else:
+                logger.info(f"✅ Directory {user_dir} was already empty.")
+
+            return True
+        except Exception as e:
+            report_looping_error(
+                error_type="cleanup_failed",
+                severity="error",
+                message=f"Failed to wipe User_Look_at folder: {e}",
+                context={"directory": str(self.user_look_at_dir)}
+            )
+            return False
+
 
 def determine_days_from_period_flags(args):
     """Calculate number of days based on advanced time period flags - standalone function."""
@@ -15827,6 +15820,8 @@ Examples:
     except argparse.ArgumentError: pass
     try: parser.add_argument('--miner-status', action='store_true', help='Show miner status')
     except argparse.ArgumentError: pass
+    try: parser.add_argument('--wipe-user-look-at', action='store_true', help='Wipe the User_Look_at folder and exit')
+    except argparse.ArgumentError: pass
 
     return parser
 
@@ -15882,6 +15877,12 @@ async def main():
         system = BitcoinLoopingSystem()
         killed_count = system.emergency_kill_all_miners()
         print(f"✅ Killed {killed_count} production miner processes")
+        sys.exit(0)
+
+    if hasattr(args, "wipe_user_look_at") and args.wipe_user_look_at:
+        print("🗑️  Wiping the User_Look_at folder as requested...")
+        system = BitcoinLoopingSystem()
+        system.wipe_user_look_at_folder()
         sys.exit(0)
 
     if getattr(args, "restart_node", False):
