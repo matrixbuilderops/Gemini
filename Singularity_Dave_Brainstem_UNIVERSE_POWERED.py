@@ -619,8 +619,15 @@ ENVIRONMENT_LAYOUTS = {
                 "ledger": "global_ledger.json",
                 "math_proof": "global_math_proof.json",
             },
+            "hierarchy": {
+                "year": "Test/Test mode/Mining/Ledgers/{year}",
+                "month": "Test/Test mode/Mining/Ledgers/{year}/{month}",
+                "week": "Test/Test mode/Mining/Ledgers/{year}/{month}/{week}",
+                "day": "Test/Test mode/Mining/Ledgers/{year}/{month}/{week}/{day}",
+                "hour": "Test/Test mode/Mining/Ledgers/{year}/{month}/{week}/{day}/{hour}",
+            },
             "hourly_dir_template": (
-                "Test/Test mode/Mining/Ledgers/{year}/{month}/{day}/{hour}"
+                "Test/Test mode/Mining/Ledgers/{year}/{month}/{week}/{day}/{hour}"
             ),
             "hourly_files": {
                 "ledger": "hourly_ledger.json",
@@ -631,8 +638,15 @@ ENVIRONMENT_LAYOUTS = {
             "base_dir": "Test/Test mode/Mining/Submission_Logs",
             "global_dir": "Test/Test mode/Mining/Submission_Logs",
             "global_file": "global_submission.json",
+            "hierarchy": {
+                "year": "Test/Test mode/Mining/Submission_Logs/{year}",
+                "month": "Test/Test mode/Mining/Submission_Logs/{year}/{month}",
+                "week": "Test/Test mode/Mining/Submission_Logs/{year}/{month}/{week}",
+                "day": "Test/Test mode/Mining/Submission_Logs/{year}/{month}/{week}/{day}",
+                "hour": "Test/Test mode/Mining/Submission_Logs/{year}/{month}/{week}/{day}/{hour}",
+            },
             "hourly_dir_template": (
-                "Test/Test mode/Mining/Submission_Logs/{year}/{month}/W{week}/{day}/{hour}"
+                "Test/Test mode/Mining/Submission_Logs/{year}/{month}/{week}/{day}/{hour}"
             ),
             "hourly_file": "hourly_submission.json",
         },
@@ -724,8 +738,15 @@ ENVIRONMENT_LAYOUTS = {
                 "ledger": "global_ledger.json",
                 "math_proof": "global_math_proof.json",
             },
+            "hierarchy": {
+                "year": "Mining/Ledgers/{year}",
+                "month": "Mining/Ledgers/{year}/{month}",
+                "week": "Mining/Ledgers/{year}/{month}/{week}",
+                "day": "Mining/Ledgers/{year}/{month}/{week}/{day}",
+                "hour": "Mining/Ledgers/{year}/{month}/{week}/{day}/{hour}",
+            },
             "hourly_dir_template": (
-                "Mining/Ledgers/{year}/{month}/{day}/{hour}"
+                "Mining/Ledgers/{year}/{month}/{week}/{day}/{hour}"
             ),
             "hourly_files": {
                 "ledger": "hourly_ledger.json",
@@ -736,8 +757,15 @@ ENVIRONMENT_LAYOUTS = {
             "base_dir": "Mining/Submission_Logs",
             "global_dir": "Mining/Submission_Logs",
             "global_file": "global_submission.json",
+            "hierarchy": {
+                "year": "Mining/Submission_Logs/{year}",
+                "month": "Mining/Submission_Logs/{year}/{month}",
+                "week": "Mining/Submission_Logs/{year}/{month}/{week}",
+                "day": "Mining/Submission_Logs/{year}/{month}/{week}/{day}",
+                "hour": "Mining/Submission_Logs/{year}/{month}/{week}/{day}/{hour}",
+            },
             "hourly_dir_template": (
-                "Mining/Submission_Logs/{year}/{month}/W{week}/{day}/{hour}"
+                "Mining/Submission_Logs/{year}/{month}/{week}/{day}/{hour}"
             ),
             "hourly_file": "hourly_submission.json",
         },
@@ -746,7 +774,7 @@ ENVIRONMENT_LAYOUTS = {
             # Component-based System folder structure
             "brain": {
                 "global_dir": "Mining/System/Brain/Global",
-                "hourly_dir_template": "Mining/System/Brain/Hourly/{year}/{month}/{day}/{hour}",
+                "hourly_dir_template": "Mining/System/Brain/Hourly/{year}/{month}/{week}/{day}/{hour}",
                 "files": {
                     "report": "global_brain_report.json",
                     "error": "global_brain_error.json",
@@ -758,7 +786,7 @@ ENVIRONMENT_LAYOUTS = {
             },
             "brainstem": {
                 "global_dir": "Mining/System/Brainstem/Global",
-                "hourly_dir_template": "Mining/System/Brainstem/Hourly/{year}/{month}/{day}/{hour}",
+                "hourly_dir_template": "Mining/System/Brainstem/Hourly/{year}/{month}/{week}/{day}/{hour}",
                 "files": {
                     "report": "global_brainstem_report.json",
                     "error": "global_brainstem_error.json",
@@ -770,7 +798,7 @@ ENVIRONMENT_LAYOUTS = {
             },
             "dtm": {
                 "global_dir": "Mining/System/DTM/Global",
-                "hourly_dir_template": "Mining/System/DTM/Hourly/{year}/{month}/{day}/{hour}",
+                "hourly_dir_template": "Mining/System/DTM/Hourly/{year}/{month}/{week}/{day}/{hour}",
                 "files": {
                     "report": "global_dtm_report.json",
                     "error": "global_dtm_error.json",
@@ -782,7 +810,7 @@ ENVIRONMENT_LAYOUTS = {
             },
             "looping": {
                 "global_dir": "Mining/System/Looping/Global",
-                "hourly_dir_template": "Mining/System/Looping/Hourly/{year}/{month}/{day}/{hour}",
+                "hourly_dir_template": "Mining/System/Looping/Hourly/{year}/{month}/{week}/{day}/{hour}",
                 "files": {
                     "report": "global_looping_report.json",
                     "error": "global_looping_error.json",
@@ -794,7 +822,7 @@ ENVIRONMENT_LAYOUTS = {
             },
             "miners": {
                 "global_dir": "Mining/System/Miners/Global",
-                "hourly_dir_template": "Mining/System/Miners/Hourly/{year}/{month}/{day}/{hour}",
+                "hourly_dir_template": "Mining/System/Miners/Hourly/{year}/{month}/{week}/{day}/{hour}",
                 "files": {
                     "report": "global_miners_report.json",
                     "error": "global_miners_error.json",
@@ -807,13 +835,13 @@ ENVIRONMENT_LAYOUTS = {
         },
         "system_reports": {
             "global_dir": "Mining/System/System_Reports/Aggregated/Global",
-            "hourly_dir_template": "Mining/System/System_Reports/Aggregated/Hourly/{year}/{month}/{day}/{hour}",
+            "hourly_dir_template": "Mining/System/System_Reports/Aggregated/Hourly/{year}/{month}/{week}/{day}/{hour}",
             "global_file": "global_system_report.json",
             "hourly_file": "hourly_system_report.json",
         },
         "system_errors": {
             "global_dir": "Mining/System/System_Errors/Aggregated/Global",
-            "hourly_dir_template": "Mining/System/System_Errors/Aggregated/Hourly/{year}/{month}/{day}/{hour}",
+            "hourly_dir_template": "Mining/System/System_Errors/Aggregated/Hourly/{year}/{month}/{week}/{day}/{hour}",
             "global_file": "global_system_error.json",
             "hourly_file": "hourly_system_error.json",
         },
@@ -2498,17 +2526,17 @@ def get_brain_qtl_file_path(file_type, environment="Mining", custom_path=None):
         year, month, day, hour = custom_path
         try:
             dt_value = datetime(int(year), int(month), int(day))
-            week = f"W{dt_value.strftime('%W')}"
+            week = dt_value.strftime('%W')
         except Exception:
             now = datetime.now()
-            week = f"W{now.strftime('%W')}"
+            week = now.strftime('%W')
     else:
         now = datetime.now()
         year = now.strftime("%Y")
         month = now.strftime("%m")
         day = now.strftime("%d")
         hour = now.strftime("%H")
-        week = f"W{now.strftime('%W')}"
+        week = now.strftime('%W')
 
     components = {"year": year, "month": month, "week": week, "day": day, "hour": hour}
 

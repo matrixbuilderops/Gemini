@@ -32,13 +32,23 @@ from typing import Optional
 
 # Import Brain reporting functions
 try:
-    from Singularity_Dave_Brainstem_UNIVERSE_POWERED import brain_save_system_report, brain_save_system_error, brain_get_base_path
+    from Singularity_Dave_Brainstem_UNIVERSE_POWERED import (
+        brain_save_system_report,
+        brain_save_system_error,
+        brain_get_base_path,
+        brain_get_path
+    )
     BRAIN_REPORTING_AVAILABLE = True
 except ImportError:
     BRAIN_REPORTING_AVAILABLE = False
     def brain_save_system_report(*args, **kwargs): return {"success": False}
     def brain_save_system_error(*args, **kwargs): return {"success": False}
-    def brain_get_base_path(): return "Mining"
+    def brain_get_base_path(): return "." # Return current dir as a safe fallback
+    def brain_get_path(key, **kwargs):
+        # A very basic fallback without real structure
+        if "dir" in key:
+            return f"fallback/{key.replace('_dir','')}"
+        return f"fallback/{key}.json"
 
 # Import config normalizer for consistent key handling
 try:
@@ -85,8 +95,7 @@ def report_miner_error(error_type, severity, message, context=None, recovery_act
             "stack_trace": stack_trace or (traceback.format_exc() if sys.exc_info()[0] else None)
         }
         
-        base = brain_get_base_path()
-        global_error_file = os.path.join(base, "System/Error_Reports/Miners", "Global", "global_miners_error.json")
+        global_error_file = brain_get_path("global_miners_error")
         if os.path.exists(global_error_file):
             try:
                 with open(global_error_file, 'r') as f:
@@ -133,8 +142,7 @@ def report_miner_status(miner_id="unknown", total_hashes=0, blocks_found=0, aver
             "uptime_hours": 0
         }
         
-        base = brain_get_base_path()
-        global_report_file = os.path.join(base, "System/System_Reports/Miners", "Global", "global_miners_report.json")
+        global_report_file = brain_get_path("global_miners_report")
         if os.path.exists(global_report_file):
             try:
                 with open(global_report_file, 'r') as f:
@@ -231,7 +239,7 @@ get_all_dynamic_modifiers = None
 # BRAIN.QTL INTEGRATION - Production Miner must query Brain.QTL for paths, never create folders
 def _load_brain_qtl_miner() -> dict:
     """Load Brain.QTL configuration - canonical folder authority for Production Miner"""
-    brain_path = Path(__file__).parent / "Singularity_Dave_Brain.QTL"
+    brain_path = Path(brain_get_path("brain_qtl_file"))
     try:
         with open(brain_path, 'r') as f:
             content = f.read()
@@ -242,35 +250,6 @@ def _load_brain_qtl_miner() -> dict:
     except Exception as e:
         print(f"⚠️ Production Miner Warning: Could not load Brain.QTL: {e}")
         return {}
-
-def get_brain_qtl_paths_miner(flags: list = None) -> dict:
-    """Get paths from Brain.QTL based on flags - Production Miner NEVER creates folders"""
-    base = brain_get_base_path()
-    brain_data = _load_brain_qtl_miner()
-    if not brain_data:
-        return {
-            'temporary_template': f'{base}/Temporary/Template',
-            'ledgers': f'{base}/Ledgers',
-            'base_path': base
-        }
-    
-    flag_mapping = brain_data.get('folder_management', {}).get('flag_mode_mapping', {})
-    if flags:
-        mode = 'production_mode'  # Production miner primarily uses production mode
-        if '--demo' in flags:
-            mode = 'demo_mode'
-        elif '--test' in flags:
-            mode = 'test_mode'
-        mode_config = flag_mapping.get(mode, flag_mapping.get('production_mode', {}))
-    else:
-        mode_config = flag_mapping.get('production_mode', {})
-    
-    base = brain_get_base_path()
-    return {
-        'temporary_template': mode_config.get('temporary_template', f'{base}/Temporary/Template'),
-        'ledgers': mode_config.get('ledgers', f'{base}/Ledgers'),
-        'base_path': mode_config.get('base_path', base)
-    }
 
 def validate_folder_exists_miner(folder_path: str, component_name: str = "Production-Miner") -> bool:
     """Validate folder exists - do NOT create it (Brainstem responsibility)"""
@@ -593,15 +572,12 @@ class ProductionBitcoinMiner:
         # CORRECTED: Use process_id for everything - mining processes use process_X folders
         self.terminal_id = terminal_id or f"terminal_{self.miner_number}"  # Keep for parameter compatibility
         self.process_id = f"process_{self.miner_number}"  # CORRECT: Use process_X folders
-        self.temporary_template_root = (
-            self._brain_path("temporary_template_dir")
-            or (self.repo_root / brain_get_base_path() / "Temporary/Template")
-        )
+        self.temporary_template_root = Path(brain_get_path("temporary_template_dir"))
         
         # ✨ CORRECTED: Use process subfolder to match Looping/Brainstem naming
         # Looping creates process_X folders, so we must match that
         # ARCHITECTURAL: Use brain_get_base_path for mode-aware paths
-        base_path = Path(brain_get_base_path()) / "Temporary/Template"
+        base_path = Path(brain_get_path("temporary_template_dir"))
         
         self.mining_process_folder = base_path / self.process_id
         if not validate_folder_exists_miner(str(self.mining_process_folder), "Production-Miner-terminal"):
@@ -643,7 +619,7 @@ class ProductionBitcoinMiner:
 
         # Looping system coordination - ALWAYS ENABLED in daemon mode
         self.looping_control_enabled = daemon_mode  # Enable in daemon mode by default
-        self.control_file = normalized_path("shared_state / miner_control.json")
+        self.control_file = Path(brain_get_path("miner_control_file"))
         
         # Initialize control files and command listening
         self._init_control_files()
@@ -866,7 +842,7 @@ class ProductionBitcoinMiner:
 
     def _init_control_files(self):
         """Initialize control and command files"""
-        self.command_file = normalized_path(f"shared_state / miner_commands_{self.process_id}.json")
+        self.command_file = Path(brain_get_path("miner_commands_file", process_id=self.process_id))
         self.check_commands_enabled = True
         self.last_command_check = time.time()
         self.leading_zeros_sustained = 0
@@ -1270,7 +1246,7 @@ class ProductionBitcoinMiner:
             
             registry_path = self._brain_path("global_submission")
             if registry_path is None:
-                registry_path = (self.repo_root / f"{brain_get_base_path()}/Submission_Logs/global_submission.json")
+                registry_path = Path(brain_get_path("global_submission"))
 
             # Load existing or initialize from template
             if registry_path.exists():
@@ -1317,7 +1293,7 @@ class ProductionBitcoinMiner:
             except (OSError, IOError, PermissionError) as write_error:
                 self.logger.error(f"Cannot write registry: {write_error}")
                 try:
-                    fallback_path = Path("/tmp/global_submission_registry.json")
+                    fallback_path = Path(brain_get_path("global_submission_fallback"))
                     with open(fallback_path, "w", encoding="utf-8") as handle:
                         json.dump(registry, handle, indent=2)
                     self.logger.info(f"Registry saved to fallback: {fallback_path}")
@@ -1344,16 +1320,7 @@ class ProductionBitcoinMiner:
 
             ledger_path = self._brain_path("hourly_ledger", custom_components)
             if ledger_path is None:
-                fallback = (
-                    self.repo_root
-                    / "Mining"
-                    / "Ledgers"
-                    / moment.strftime("%Y")
-                    / moment.strftime("%m")
-                    / moment.strftime("%d")
-                    / moment.strftime("%H")
-                )
-                ledger_path = fallback / "hourly_ledger.json"
+                ledger_path = Path(brain_get_path("hourly_ledger", custom_timestamp=moment.isoformat()))
                 # Validate hierarchical ledger path exists (should be created by Brainstem)
                 if not validate_folder_exists_miner(str(ledger_path.parent), "Production-Miner-hourly-ledger"):
                     print(f"⚠️ Continuing without hourly ledger path: {ledger_path.parent}")
@@ -1423,16 +1390,7 @@ class ProductionBitcoinMiner:
 
             proof_path = self._brain_path("hourly_math_proof", custom_components)
             if proof_path is None:
-                fallback = (
-                    self.repo_root
-                    / "Mining"
-                    / "Math_Proofs"
-                    / moment.strftime("%Y")
-                    / moment.strftime("%m")
-                    / moment.strftime("%d")
-                    / moment.strftime("%H")
-                )
-                proof_path = fallback / "hourly_math_proof.json"
+                proof_path = Path(brain_get_path("hourly_math_proof", custom_timestamp=moment.isoformat()))
 
             # Load existing or create from template
             if proof_path.exists():
@@ -1820,7 +1778,7 @@ class ProductionBitcoinMiner:
     def read_looping_system_control(self):
         """Read control commands from looping system"""
         try:
-            control_file = normalized_path("Mining / System / shared_state / miner_control.json")
+            control_file = Path(brain_get_path("miner_control_file"))
             if control_file.exists():
                 try:
                     with open(control_file, "r") as f:
@@ -2133,7 +2091,7 @@ class ProductionBitcoinMiner:
                                     json.dump(final_results, f)
                             except (OSError, IOError, PermissionError) as write_error:
                                 self.logger.error(f"Cannot write results: {write_error}")
-                                fallback_path = normalize_path_str("/tmp / mining_results.json")
+                                fallback_path = brain_get_path("mining_results_fallback")
                                 try:
                                     with open(fallback_path, "w") as f:
                                         json.dump(final_results, f)
@@ -4907,8 +4865,8 @@ class ProductionBitcoinMiner:
     def detect_looping_mode(self):
         """Detect if we're running in looping system coordination mode"""
         # Check for Dynamic Template Manager coordination files
-        shared_template_path = normalize_path_str("/tmp / mining_templates")
-        dynamic_manager_marker = normalize_path_str("/tmp / dynamic_template_manager_active")
+        shared_template_path = brain_get_path("shared_mining_templates_dir")
+        dynamic_manager_marker = brain_get_path("dtm_active_marker")
 
         if os.path.exists(dynamic_manager_marker) or os.path.exists(shared_template_path):
             self.is_looping_mode = True
@@ -5047,10 +5005,8 @@ class ProductionBitcoinMiner:
         """Log when DTM rejects a solution"""
         try:
             timestamp = datetime.now()
-            rejection_dir = Path(f"{brain_get_base_path()}/Rejections") / str(timestamp.year) / f"{timestamp.month:02d}" / f"{timestamp.day:02d}" / f"{timestamp.hour:02d}"
-            rejection_dir.mkdir(parents=True, exist_ok=True)
-            
-            rejection_file = rejection_dir / f"rejection_{timestamp.strftime('%H%M%S')}.json"
+            rejection_file = Path(brain_get_path("hourly_rejection_log", custom_timestamp=timestamp.isoformat()))
+            rejection_file.parent.mkdir(parents=True, exist_ok=True)
             rejection_data = {
                 "timestamp": timestamp.isoformat(),
                 "miner_id": solution_data.get("miner_id", self.miner_id),
@@ -5076,7 +5032,7 @@ class ProductionBitcoinMiner:
         """
         try:
             timestamp_ms = int(time.time() * 1000)
-            submission_signal_dir = Path(f"{brain_get_base_path()}/Temporary/Template")
+            submission_signal_dir = Path(brain_get_path("temporary_template_dir"))
             submission_signal_dir.mkdir(parents=True, exist_ok=True)
             
             signal_file = submission_signal_dir / f"looping_submission_{self.process_id}_{timestamp_ms}.signal"
@@ -5265,7 +5221,7 @@ class ProductionBitcoinMiner:
                 print(f"✅ Enhanced submission saved: {production_miner_file}")
 
             # ALSO save to Mining/Submission_Logs folder for easy access
-            submissions_dir = Path(f"{brain_get_base_path()}/Submission_Logs")
+            submissions_dir = Path(brain_get_path("submission_logs_dir"))
             if submissions_dir.exists():
                 submission_copy_file = submissions_dir / f"production_miner_submission_{timestamp_str}.json"
                 try:
@@ -5823,7 +5779,7 @@ class ProductionBitcoinMiner:
 
         try:
             # Check miner_commands.json in Temporary/Template folder
-            commands_file = normalized_path(f"{brain_get_base_path()}/Temporary/Template/miner_commands.json")
+            commands_file = Path(brain_get_path("miner_commands_file_generic"))
             
             # DEBUG: Always print what we're checking
             if not hasattr(self, '_debug_command_check_count'):
@@ -6277,15 +6233,14 @@ class ProductionBitcoinMiner:
             from pathlib import Path
 
             # Create organized directory structure
-            mining_dir = Path("Mining")
-            # Use proper Ledgers folder with Year/month/day/hourly structure
             now = datetime.now()
-            hourly_dir = mining_dir / "Ledgers" / str(now.year) / f"{now.month:02d}" / f"{now.day:02d}" / f"{now.hour:02d}"
+            hourly_ledger_path = Path(brain_get_path("hourly_ledger", custom_timestamp=now.isoformat()))
+            hourly_dir = hourly_ledger_path.parent
             if not hourly_dir.exists():
                 raise FileNotFoundError(f"Hourly ledger directory not found: {hourly_dir}. Brain.QTL canonical authority via Brainstem should create this folder structure.")
 
             # Create unique submission folder
-            timestamp = datetime.now().strftime("%H%M%S")
+            timestamp = now.strftime("%H%M%S")
             unique_id = f"submission_{timestamp}_{random.randint(1000, 9999)}"
             submission_folder = hourly_dir / unique_id
             if not submission_folder.exists():

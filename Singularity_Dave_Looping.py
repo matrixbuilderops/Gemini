@@ -33,68 +33,6 @@ HAS_CONFIRMATION_MONITOR = False
 # File structure management - handled by Brain.QTL
 HAS_HIERARCHICAL = True
 
-def write_hierarchical_ledger(data, base_path="Mining", component="Looping", file_type="ledger"):
-    """Brain.QTL-driven hierarchical file management"""
-    import os
-    from datetime import datetime
-    
-    now = datetime.now()
-    year = now.strftime("%Y")
-    month = now.strftime("%m") 
-    day = now.strftime("%d")
-    hour = now.strftime("%H")
-    
-    # Create hierarchical path based on Brain.QTL folder_management structure
-    if file_type == "ledger":
-        hierarchy_path = f"{base_path}/Ledgers/{year}/{month}/{day}/{hour}"
-    elif file_type == "submission":
-        hierarchy_path = f"{base_path}/Submissions/{year}/{month}/{day}/{hour}"
-    elif file_type == "system_report":
-        hierarchy_path = f"{base_path}/System/System_Reports/{component}/Hourly/{year}/{month}/{day}/{hour}"
-    elif file_type == "system_log":
-        hierarchy_path = f"{base_path}/System/System_Logs/{component}/Hourly/{year}/{month}/{day}/{hour}"
-    elif file_type == "error_report":
-        hierarchy_path = f"{base_path}/System/Error_Reports/{component}/Hourly/{year}/{month}/{day}/{hour}"
-    else:
-        hierarchy_path = f"{base_path}/{component}/{year}/{month}/{day}/{hour}"
-    
-    # Ensure directory exists
-    os.makedirs(hierarchy_path, exist_ok=True)
-    return hierarchy_path
-
-class HierarchicalFileManager:
-    """Brain.QTL-based hierarchical file management"""
-    
-    def __init__(self, base_path="Mining"):
-        self.base_path = base_path
-    
-    def get_hierarchical_path(self, component="Looping", file_type="ledger", timestamp=None):
-        """Generate hierarchical path based on Brain.QTL folder structure"""
-        if timestamp is None:
-            from datetime import datetime
-            timestamp = datetime.now()
-        
-        year = timestamp.strftime("%Y")
-        month = timestamp.strftime("%m")
-        day = timestamp.strftime("%d") 
-        hour = timestamp.strftime("%H")
-        
-        path_map = {
-            "ledger": f"{self.base_path}/Ledgers/{year}/{month}/{day}/{hour}",
-            "submission": f"{self.base_path}/Submissions/{year}/{month}/{day}/{hour}",
-            "system_report": f"{self.base_path}/System/System_Reports/{component}/Hourly/{year}/{month}/{day}/{hour}",
-            "system_log": f"{self.base_path}/System/System_Logs/{component}/Hourly/{year}/{month}/{day}/{hour}",
-            "error_report": f"{self.base_path}/System/Error_Reports/{component}/Hourly/{year}/{month}/{day}/{hour}"
-        }
-        
-        return path_map.get(file_type, f"{self.base_path}/{component}/{year}/{month}/{day}/{hour}")
-    
-    def ensure_path_exists(self, path):
-        """Create directory structure if it doesn't exist"""
-        import os
-        os.makedirs(path, exist_ok=True)
-        return path
-
 # DEFENSIVE Brain import - NO HARD DEPENDENCIES
 brain_available = False
 BrainQTLInterpreter = None
@@ -104,14 +42,16 @@ import sys
 if '--help' not in sys.argv and '-h' not in sys.argv:
     try:
         from Singularity_Dave_Brainstem_UNIVERSE_POWERED import (
-            BrainQTLInterpreter, 
-            brain_set_mode, 
+            BrainQTLInterpreter,
+            brain_set_mode,
             brain_initialize_mode,
             brain_get_math_config,
             MINING_MATH_CONFIG,
             brain_save_ledger,
             brain_save_submission,
-            brain_save_system_report
+            brain_save_system_report,
+            brain_get_path,
+            brain_get_base_path
         )
 
         brain_available = True
@@ -128,6 +68,8 @@ if '--help' not in sys.argv and '-h' not in sys.argv:
         def brain_save_ledger(*args, **kwargs): return {"success": False}
         def brain_save_submission(*args, **kwargs): return {"success": False}
         def brain_save_system_report(*args, **kwargs): return {"success": False}
+        def brain_get_path(key, **kwargs): return f"Mining/{key}"
+        def brain_get_base_path(): return "Mining"
         MINING_MATH_CONFIG = {}
         print("🔄 Brain.QTL not available - using defensive fallbacks")
     except Exception as e:
@@ -137,6 +79,8 @@ if '--help' not in sys.argv and '-h' not in sys.argv:
         def brain_set_mode(*args, **kwargs): pass
         def brain_initialize_mode(*args, **kwargs): return {"success": False}
         def brain_get_math_config(*args, **kwargs): return {}
+        def brain_get_path(key, **kwargs): return f"Mining/{key}"
+        def brain_get_base_path(): return "Mining"
         MINING_MATH_CONFIG = {}
         print(f"⚠️ Brain import error: {e} - using defensive fallbacks")
 else:
@@ -156,20 +100,17 @@ except ImportError:
 import os
 from datetime import datetime
 
-def setup_brain_coordinated_logging(component_name, base_dir="Mining/System"):
+def setup_brain_coordinated_logging(component_name):
     """Setup logging according to Brain.QTL component-based structure"""
-    # Component-based: Mining/System/System_Logs/Looping/Global/ and System_Logs/Looping/Hourly/
-    log_dir = os.path.join(base_dir, "System_Logs", "Looping", "Global")
+    # Get paths dynamically from brainstem
+    global_log = brain_get_path(f"global_{component_name}_log")
+    hourly_log = brain_get_path(f"hourly_{component_name}_log", custom_timestamp=datetime.now().isoformat())
+
+    log_dir = os.path.dirname(global_log)
     os.makedirs(log_dir, exist_ok=True)
     
-    # Hourly directory
-    now = datetime.now()
-    hourly_dir = os.path.join(base_dir, "System_Logs", "Looping", "Hourly", str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}")
+    hourly_dir = os.path.dirname(hourly_log)
     os.makedirs(hourly_dir, exist_ok=True)
-    
-    # Global and hourly log files per Brain.QTL component-based structure
-    global_log = os.path.join(log_dir, f"global_{component_name}.log")
-    hourly_log = os.path.join(hourly_dir, f"hourly_{component_name}.log")
     
     # Setup logger with both global and hourly handlers
     logger = logging.getLogger(component_name)
@@ -200,21 +141,23 @@ logger, global_log_file, hourly_log_file = setup_brain_coordinated_logging("loop
 # Initialize Looping component files (reports + logs with append logic)
 try:
     from Singularity_Dave_Brainstem_UNIVERSE_POWERED import initialize_component_files
-    initialize_component_files("Looping", "Mining")
+    initialize_component_files("Looping", brain_get_base_path())
 except Exception as e:
     logger.warning(f"⚠️ Looping component file initialization warning: {e}")
 
 
-def report_component_status(component, status, details, metrics=None, base_dir="Mining/System"):
+def report_component_status(component, status, details, metrics=None):
     """Report component status to Brain.QTL coordinated report tracking"""
     try:
-        # Create component report directory
-        report_dir = os.path.join(base_dir, "Component_Reports", component)
+        now = datetime.now()
+        # Get paths dynamically
+        global_report_file = brain_get_path(f"global_{component}_report")
+        hourly_report_file = brain_get_path(f"hourly_{component}_report", custom_timestamp=now.isoformat())
+
+        report_dir = os.path.dirname(global_report_file)
         os.makedirs(report_dir, exist_ok=True)
         
-        # Hourly report directory
-        now = datetime.now()
-        hourly_report_dir = os.path.join(report_dir, str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}")
+        hourly_report_dir = os.path.dirname(hourly_report_file)
         os.makedirs(hourly_report_dir, exist_ok=True)
         
         # Report entry
@@ -227,7 +170,6 @@ def report_component_status(component, status, details, metrics=None, base_dir="
         }
         
         # Write to global component report file
-        global_report_file = os.path.join(report_dir, f"{component.lower()}_reports.json")
         reports = []
         if os.path.exists(global_report_file):
             with open(global_report_file, 'r') as f:
@@ -239,7 +181,6 @@ def report_component_status(component, status, details, metrics=None, base_dir="
             json.dump({"reports": reports, "last_updated": now.isoformat()}, f, indent=2)
         
         # Write to hourly component report file
-        hourly_report_file = os.path.join(hourly_report_dir, f"{component.lower()}_reports.json")
         hourly_reports = []
         if os.path.exists(hourly_report_file):
             with open(hourly_report_file, 'r') as f:
@@ -279,7 +220,7 @@ def report_looping_error(error_type, severity, message, context=None, recovery_a
     
     # === GLOBAL ERROR FILE (Mining/Looping/Global/global_looping_error.json) ===
     try:
-        global_error_file = os.path.join("Mining/System/System_Errors/Looping", "Global", "global_looping_error.json")
+        global_error_file = brain_get_path("global_looping_error")
         
         # Load existing or create from Brainstem-generated template
         if os.path.exists(global_error_file):
@@ -316,8 +257,8 @@ def report_looping_error(error_type, severity, message, context=None, recovery_a
     
     # === HOURLY ERROR FILE (Mining/System/System_Errors/Looping/Hourly/YYYY/MM/DD/HH/hourly_looping_error.json) ===
     try:
-        hourly_dir = os.path.join("Mining/System/System_Errors/Looping/Hourly", str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}")
-        hourly_error_file = os.path.join(hourly_dir, "hourly_looping_error.json")
+        hourly_error_file = brain_get_path("hourly_looping_error", custom_timestamp=now.isoformat())
+        os.makedirs(os.path.dirname(hourly_error_file), exist_ok=True)
         
         # Load existing or create from template
         if os.path.exists(hourly_error_file):
@@ -355,17 +296,19 @@ def report_looping_error(error_type, severity, message, context=None, recovery_a
 
 
 # Keep old function for backwards compatibility, but redirect to new one
-def report_component_error(component, error_type, severity, message, base_dir="Mining/System"):
+def report_component_error(component, error_type, severity, message):
     """Legacy error reporting - redirects to new defensive system"""
     if component == "Looping":
         report_looping_error(error_type, severity, message)
     else:
         # For other components, use old system for now
         try:
-            error_dir = os.path.join(base_dir, "Component_Errors", component)
-            os.makedirs(error_dir, exist_ok=True)
             now = datetime.now()
-            hourly_error_dir = os.path.join(error_dir, str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}")
+            global_error_file = brain_get_path(f"global_{component}_error")
+            hourly_error_file = brain_get_path(f"hourly_{component}_error", custom_timestamp=now.isoformat())
+            error_dir = os.path.dirname(global_error_file)
+            os.makedirs(error_dir, exist_ok=True)
+            hourly_error_dir = os.path.dirname(hourly_error_file)
             os.makedirs(hourly_error_dir, exist_ok=True)
             error_entry = {
                 "timestamp": now.isoformat(),
@@ -375,7 +318,6 @@ def report_component_error(component, error_type, severity, message, base_dir="M
                 "message": message,
                 "acknowledged_by_brain": False
             }
-            global_error_file = os.path.join(error_dir, f"{component.lower()}_errors.json")
             errors = []
             if os.path.exists(global_error_file):
                 with open(global_error_file, 'r') as f:
@@ -415,7 +357,7 @@ def report_looping_status(mining_sessions=0, templates_distributed=0, submission
     
     # === GLOBAL REPORT FILE ===
     try:
-        global_report_file = os.path.join("Mining/System/System_Reports/Looping", "Global", "global_looping_report.json")
+        global_report_file = brain_get_path("global_looping_report")
         
         # Load existing or create from template
         if os.path.exists(global_report_file):
@@ -455,8 +397,8 @@ def report_looping_status(mining_sessions=0, templates_distributed=0, submission
     
     # === HOURLY REPORT FILE ===
     try:
-        hourly_dir = os.path.join("Mining/System/System_Reports/Looping/Hourly", str(now.year), f"{now.month:02d}", f"{now.day:02d}", f"{now.hour:02d}")
-        hourly_report_file = os.path.join(hourly_dir, "hourly_looping_report.json")
+        hourly_report_file = brain_get_path("hourly_looping_report", custom_timestamp=now.isoformat())
+        os.makedirs(os.path.dirname(hourly_report_file), exist_ok=True)
         
         # Load existing or create from template
         if os.path.exists(hourly_report_file):
@@ -746,27 +688,20 @@ class BitcoinLoopingSystem:
         self.target_blocks = 0
 
         # Enhanced file structure - DYNAMIC DIRECTORY DETECTION
-        # Use current working directory where the script is running
-        self.base_dir = Path.cwd()
-
-        # SIMPLIFIED: Just set the directories, don't create them in init - SPEC COMPLIANCE
-        self.test_dir = self.base_dir / "Test"
-        self.mining_dir = self.base_dir / "Mining"
-        self.ledger_dir = self.mining_dir / "Ledgers"  # PROPER: Mining/Ledgers/
-        self.submission_dir = self.mining_dir / "Submissions"  # PROPER: Mining/Submissions/
-        self.template_dir = self.mining_dir / "Temporary/Template"
-        self.temporary_template_dir = self.mining_dir / "Temporary/Template"
-        
-        # Mode-aware User_Look_at directory
-        if self.demo_mode or self.test_mode:
-            self.user_look_at_dir = self.base_dir / "Test" / ("Demo" if self.demo_mode else "Test mode") / "System/User_Look_at"
-        else:
-            self.user_look_at_dir = self.base_dir / "User_Look_at"
+        # Use brainstem for path resolution
+        self.base_dir = Path(brain_get_base_path())
+        self.test_dir = self.base_dir
+        self.mining_dir = self.base_dir
+        self.ledger_dir = Path(brain_get_path("ledgers_dir"))
+        self.submission_dir = Path(brain_get_path("submissions_dir"))
+        self.template_dir = Path(brain_get_path("temporary_template_dir"))
+        self.temporary_template_dir = self.template_dir
+        self.user_look_at_dir = Path(brain_get_path("user_look_at"))
             
         # NOTE: centralized_template_file will be set AFTER mode-specific path setup
 
         # Main submission log path - SPEC COMPLIANCE: Use Submissions
-        self.submission_log_path = self.submission_dir / "global_submission.json"
+        self.submission_log_path = Path(brain_get_path("global_submission"))
         
         # Template Manager initialization - CREATE BEFORE folder structure
         # DTM uses Brain-created structure, does NOT create its own files
@@ -849,10 +784,7 @@ class BitcoinLoopingSystem:
 
     def get_temporary_template_dir(self):
         """Get correct temporary template directory based on mode."""
-        if self.demo_mode:
-            return Path("Test/Demo/Mining/Temporary/Template")
-        else:
-            return Path("Mining/Temporary/Template")
+        return Path(brain_get_path("temporary_template_dir"))
 
         # NOTE: Dynamic daemon folders will be created after mode-specific paths are set
 
@@ -894,7 +826,7 @@ class BitcoinLoopingSystem:
         self.miner_command_queue = []
         # Miner control files - USE TEMPORARY TEMPLATE, NOT SHARED_STATE
         # Communication happens through Temporary/Template folders (process_1, process_2, etc.)
-        base_temp_path = "Test/Demo/Mining/Temporary/Template" if self.demo_mode else "Mining/Temporary/Template"
+        base_temp_path = brain_get_path("temporary_template_dir")
         self.miner_status_file = Path(f"{base_temp_path}/miner_status.json")
         self.miner_control_file = Path(f"{base_temp_path}/miner_control.json")
 
@@ -2158,7 +2090,7 @@ class BitcoinLoopingSystem:
             import json
             
             # Update global ledger
-            ledger_path = Path("Mining/Ledgers/global_ledger.json")
+            ledger_path = Path(brain_get_path("global_ledger"))
             if ledger_path.exists():
                 with open(ledger_path, 'r') as f:
                     ledger_data = json.load(f)
@@ -14919,7 +14851,7 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
         """Extract current leading zeros from miner process."""
         try:
             # Try to read from the global ledger to get real mining data
-            global_ledger_path = Path("Mining/Ledgers/global_ledger.json")
+            global_ledger_path = Path(brain_get_path("global_ledger"))
             if global_ledger_path.exists():
                 with open(global_ledger_path, 'r') as f:
                     ledger_data = json.load(f)
@@ -14941,7 +14873,7 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
         """Extract blocks found count from miner process."""
         try:
             # Try to read from the global ledger to get real block count
-            global_ledger_path = Path("Mining/Ledgers/global_ledger.json")
+            global_ledger_path = Path(brain_get_path("global_ledger"))
             if global_ledger_path.exists():
                 with open(global_ledger_path, 'r') as f:
                     ledger_data = json.load(f)
@@ -14949,7 +14881,7 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
                 
             # Fallback to current hour ledger
             now = datetime.now()
-            hourly_ledger_path = Path(f"Mining/Ledgers/{now.year}/{now.month:02d}/{now.day:02d}/{now.hour:02d}/hourly_ledger.json")
+            hourly_ledger_path = Path(brain_get_path("hourly_ledger", custom_timestamp=now.isoformat()))
             if hourly_ledger_path.exists():
                 with open(hourly_ledger_path, 'r') as f:
                     hourly_data = json.load(f)
@@ -14964,7 +14896,7 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
     def save_monitor_data(self, monitor_data):
         """Save monitoring data to file."""
         try:
-            monitor_file = Path("Mining/System/monitor_session.json")
+            monitor_file = Path(brain_get_path("system_dir")) / "monitor_session.json"
             monitor_file.parent.mkdir(parents=True, exist_ok=True)
             
             with open(monitor_file, 'w') as f:
@@ -15501,7 +15433,7 @@ NOTE: All monitoring functions respect the Knuth-Sorrellian-Class framework
                 'last_template_check': datetime.now(),
                 'templates_processed': 0,
                 'always_on_start_time': datetime.now(),
-                'kill_command_file': self.base_dir / "Mining" / "System" / "always_on_kill.signal"
+                'kill_command_file': Path(brain_get_path("system_dir")) / "always_on_kill.signal"
             }
             
             print(f"✅ Always-on mining mode configured:")
