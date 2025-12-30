@@ -10102,7 +10102,7 @@ def brain_write_hierarchical(entry_data, base_dir, file_type="ledger", component
 
     return results
 
-def brain_get_path(file_type, component=None):
+def brain_get_path(file_type, component=None, custom_timestamp=None, **kwargs):
     """Get correct path for file type in current mode."""
     comp = component or _BRAIN_COMPONENT
     base = brain_get_base_path()
@@ -10113,7 +10113,26 @@ def brain_get_path(file_type, component=None):
         root = base[:-7]  # Remove "/Mining" suffix
     else:
         root = "."  # Production mode root
+
+    # Handle timestamp for hourly/daily paths
+    if custom_timestamp:
+        if isinstance(custom_timestamp, str):
+            try:
+                ts = datetime.fromisoformat(custom_timestamp)
+            except:
+                ts = datetime.now()
+        else:
+            ts = custom_timestamp
+    else:
+        ts = datetime.now()
+
+    year = ts.strftime("%Y")
+    month = ts.strftime("%m")
+    day = ts.strftime("%d")
+    hour = ts.strftime("%H")
+    week = f"W{ts.strftime('%W')}"
     
+    # Base paths
     path_map = {
         "ledger": f"{base}/Ledgers",
         "submission": f"{base}/Submission_Logs",
@@ -10128,8 +10147,80 @@ def brain_get_path(file_type, component=None):
         "error_report_aggregated": f"{root}/System/Error_Reports",
         "error_report_aggregated_index": f"{root}/System/Error_Reports",
         "template": f"{base}/Temporary/Template",
-        "user_look_at": f"{root}/System/User_Look_at" if _BRAIN_MODE in ["demo", "test"] else "./User_Look_at"
+        "temporary_template_dir": f"{base}/Temporary/Template",
+        "ledgers_dir": f"{base}/Ledgers",
+        "submissions_dir": f"{base}/Submission_Logs",
+        "submission_logs_dir": f"{base}/Submission_Logs",
+        "system_dir": f"{root}/System",
+        "user_look_at": f"{root}/System/User_Look_at" if _BRAIN_MODE in ["demo", "test"] else "./User_Look_at",
+        "brain_qtl_file": "Singularity_Dave_Brain.QTL",
+        "miner_control_file": f"{base}/Temporary/Template/miner_control.json",
+        "miner_commands_file_generic": f"{base}/Temporary/Template/miner_commands.json"
     }
+
+    # Specific file paths with timestamp injection
+    if file_type == f"hourly_{comp.lower()}_log" or file_type == "hourly_log":
+        return f"{root}/System/System_Reports/{comp}/{year}/{month}/{week}/{day}/{hour}/hourly_{comp.lower()}_log.json"
+
+    if file_type == f"global_{comp.lower()}_log" or file_type == "global_log":
+        return f"{root}/System/System_Reports/{comp}/Global/global_{comp.lower()}_log.json"
+
+    # Handle generic hourly requests
+    if file_type.startswith("hourly_"):
+        suffix = file_type.replace("hourly_", "")
+        # Check if it's a report/error or specific type
+        if "ledger" in suffix:
+            return f"{base}/Ledgers/{year}/{month}/{week}/{day}/{hour}/hourly_ledger.json"
+        if "math_proof" in suffix:
+            return f"{base}/Ledgers/{year}/{month}/{week}/{day}/{hour}/hourly_math_proof.json"
+        if "submission" in suffix:
+            return f"{base}/Submission_Logs/{year}/{month}/{week}/{day}/{hour}/hourly_submission.json"
+        if "rejection" in suffix:
+            return f"{base}/Rejections/{year}/{month}/{week}/{day}/{hour}/hourly_rejection.json"
+        if "report" in suffix:
+            # Component report
+            target_comp = comp
+            if "dtm" in suffix: target_comp = "DTM"
+            elif "looping" in suffix: target_comp = "Looping"
+            elif "miner" in suffix: target_comp = "Miners"
+            elif "brain" in suffix: target_comp = "Brain"
+            return f"{root}/System/System_Reports/{target_comp}/{year}/{month}/{week}/{day}/{hour}/hourly_{target_comp.lower()}_report.json"
+        if "error" in suffix:
+            target_comp = comp
+            if "dtm" in suffix: target_comp = "DTM"
+            elif "looping" in suffix: target_comp = "Looping"
+            elif "miner" in suffix: target_comp = "Miners"
+            elif "brain" in suffix: target_comp = "Brain"
+            return f"{root}/System/Error_Reports/{target_comp}/{year}/{month}/{week}/{day}/{hour}/hourly_{target_comp.lower()}_error.json"
+
+    # Handle global requests
+    if file_type.startswith("global_"):
+        suffix = file_type.replace("global_", "")
+        if "ledger" in suffix:
+            return f"{base}/Ledgers/global_ledger.json"
+        if "math_proof" in suffix:
+            return f"{base}/Ledgers/global_math_proof.json"
+        if "submission" in suffix:
+            return f"{base}/Submission_Logs/global_submission.json"
+        if "report" in suffix:
+            target_comp = comp
+            if "dtm" in suffix: target_comp = "DTM"
+            elif "looping" in suffix: target_comp = "Looping"
+            elif "miner" in suffix: target_comp = "Miners"
+            elif "brain" in suffix: target_comp = "Brain"
+            return f"{root}/System/System_Reports/{target_comp}/Global/global_{target_comp.lower()}_report.json"
+        if "error" in suffix:
+            target_comp = comp
+            if "dtm" in suffix: target_comp = "DTM"
+            elif "looping" in suffix: target_comp = "Looping"
+            elif "miner" in suffix: target_comp = "Miners"
+            elif "brain" in suffix: target_comp = "Brain"
+            return f"{root}/System/Error_Reports/{target_comp}/Global/global_{target_comp.lower()}_error.json"
+
+    # Handle miner command files with process_id
+    if file_type == "miner_commands_file" and "process_id" in kwargs:
+        return f"{base}/Temporary/Template/{kwargs['process_id']}/miner_commands.json"
+
     return path_map.get(file_type, f"{base}/Unknown")
 
 
