@@ -29,33 +29,31 @@ brain_available = False
 BrainQTLInterpreter = None
 
 try:
+    from Singularity_Dave_Brain import SingularityBrain
     from Singularity_Dave_Brainstem_UNIVERSE_POWERED import (
         brain_set_mode,
-        brain_initialize_mode,
         brain_get_math_config,
         brain_save_ledger,
         brain_save_submission,
         brain_save_system_report,
         brain_get_path,
         brain_get_base_path,
-        brain_perform_system_wide_consensus,
         brain_log_error
     )
     brain_available = True
-    print("🧠 Brain.QTL integration loaded successfully")
+    print("🧠 Brain Orchestrator & Brainstem integration loaded successfully")
 except ImportError:
     brain_available = False
+    SingularityBrain = None
     def brain_set_mode(*args, **kwargs): pass
-    def brain_initialize_mode(*args, **kwargs): return {"success": False}
     def brain_get_math_config(*args, **kwargs): return {}
     def brain_save_ledger(*args, **kwargs): return {"success": False}
     def brain_save_submission(*args, **kwargs): return {"success": False}
     def brain_save_system_report(*args, **kwargs): return {"success": False}
     def brain_get_path(key, **kwargs): return f"Mining/{key}"
     def brain_get_base_path(): return "Mining"
-    def brain_perform_system_wide_consensus(*args, **kwargs): return True
     def brain_log_error(*args, **kwargs): pass
-    print("🔄 Brain.QTL not available - using defensive fallbacks")
+    print("🔄 Brain not available - using defensive fallbacks")
 
 # Configure logging
 def setup_brain_coordinated_logging(component_name):
@@ -119,9 +117,11 @@ class BitcoinLoopingSystem:
         # Initialize Brain
         if brain_available:
             mode = "demo" if demo_mode else "test" if test_mode else "staging" if staging_mode else "live"
+            self.brain = SingularityBrain(mode=mode)
+            self.brain.initialize_system()
             self.math_config = brain_get_math_config(mode)
-            brain_initialize_mode(mode, "Looping")
         else:
+            self.brain = None
             self.math_config = {}
 
         self.mining_config = mining_config or {}
@@ -288,7 +288,7 @@ class BitcoinLoopingSystem:
         template_path = self.temporary_template_dir / "current_template.json"
         with open(template_path, 'w') as f:
             json.dump(template, f, indent=2)
-            
+
         # Also create working_template.json in each process folder
         for i in range(1, self.daemon_count + 1):
             proc_path = self.temporary_template_dir / f"process_{i}" / "working_template.json"
@@ -336,10 +336,10 @@ class BitcoinLoopingSystem:
         4. Looping submits
         5. Brain post-submission consensus
         """
-        print("🔄 Performing System Consensus...")
+        print("🔄 Performing System Consensus via Brain Orchestrator...")
         
         # 3. Brain Global Consensus
-        if not brain_perform_system_wide_consensus("demo" if self.demo_mode else "live"):
+        if self.brain and not self.brain.perform_consensus():
             print("❌ Brain Consensus Failed! Aborting.")
             # Log bad solution to User_Look_at
             self.log_bad_solution(solution, "Brain Consensus Failed")
@@ -348,7 +348,8 @@ class BitcoinLoopingSystem:
         # 4. Submit
         if self.submit_block(solution):
             # 5. Post-submission Consensus
-             brain_perform_system_wide_consensus("demo" if self.demo_mode else "live")
+             if self.brain:
+                 self.brain.perform_consensus()
 
              # Track submission
              brain_save_submission({
@@ -396,54 +397,60 @@ class BitcoinLoopingSystem:
         self.start_miners()
         
         try:
-            total_blocks_mined = 0
+            days_run = 0
+            run_forever = self.mining_config.get('days_all', False)
             
-            while total_blocks_mined < blocks_target:
-                # 1. Wipe Temp
-                self.cleanup_temporary_files_on_new_template()
+            while run_forever or days_run < days_target:
+                print(f"📅 Starting Day {days_run + 1}/{'∞' if run_forever else days_target}")
+                self.blocks_found_today = 0
                 
-                # 2. Get Template
-                template = self.get_real_block_template()
-                if not template:
-                    print("⏳ Waiting for template...")
-                    time.sleep(5)
-                    continue
+                while self.blocks_found_today < blocks_target:
+                    # 1. Wipe Temp
+                    self.cleanup_temporary_files_on_new_template()
                     
-                # 3. Distribute
-                self.distribute_template(template)
+                    # 2. Get Template
+                    template = self.get_real_block_template()
+                    if not template:
+                        print("⏳ Waiting for template...")
+                        time.sleep(5)
+                        continue
+
+                    # 3. Distribute
+                    self.distribute_template(template)
+                    
+                    # 4. Wait for solution
+                    solution = None
+                    print(f"⛏️  Mining Block {self.blocks_found_today + 1}/{blocks_target}...")
+                    while not solution:
+                        solution = self.check_for_solutions()
+                        if solution:
+                            break
+                        time.sleep(1)
+                    
+                    # 5. Consensus & Submit
+                    if self.consensus_and_submit(solution):
+                        self.blocks_found_today += 1
+                        print(f"💰 Block found! Today's Total: {self.blocks_found_today}/{blocks_target}")
+
+                        # Mode Logic handling
+                        mode = self.mining_config.get('mining_mode', 'fixed')
+
+                        if mode == 'on_demand':
+                            print("💤 On Demand: Stopping miners. Waking up in 40 mins...")
+                            self.stop_miners()
+                            # Wait 40 minutes
+                            if self.demo_mode:
+                                time.sleep(10) # Short wait for testing/demo
+                            else:
+                                time.sleep(40 * 60) # 40 minutes for production
+                            self.start_miners()
+
+                print(f"✅ Day {days_run + 1} Complete. {self.blocks_found_today} blocks mined.")
+                days_run += 1
                 
-                # 4. Wait for solution
-                solution = None
-                print("⛏️  Mining...")
-                while not solution:
-                    solution = self.check_for_solutions()
-                    if solution:
-                        break
-                    time.sleep(1)
-                    
-                    # Handle On Demand wake up (simulated)
-                    # In a real loop, we'd check time and start/stop miners
-                
-                # 5. Consensus & Submit
-                if self.consensus_and_submit(solution):
-                    total_blocks_mined += 1
-                    self.blocks_found_today += 1
-                    print(f"💰 Block found! Total: {total_blocks_mined}/{blocks_target}")
-                    
-                    # Mode Logic handling
-                    mode = self.mining_config.get('mining_mode', 'fixed')
-                    
-                    if mode == 'on_demand':
-                        print("💤 On Demand: Stopping miners. Waking up in 40 mins...")
-                        self.stop_miners()
-                        # Wait 40 minutes
-                        if self.demo_mode:
-                            time.sleep(10) # Short wait for testing/demo
-                        else:
-                            time.sleep(40 * 60) # 40 minutes for production
-                        self.start_miners()
-                
-                # Reset for next block
+                # Optional: Sleep until next day starts?
+                # For now, we assume continuous operation means start next day's blocks immediately
+                # unless logic dictates waiting.
         
         finally:
             if not self.mining_config.get('always_on', False):

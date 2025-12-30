@@ -10152,7 +10152,7 @@ def brain_get_path(file_type, component=None, custom_timestamp=None, **kwargs):
         "submissions_dir": f"{base}/Submission_Logs",
         "submission_logs_dir": f"{base}/Submission_Logs",
         "system_dir": f"{root}/System",
-        "user_look_at": f"{root}/System/User_Look_at" if _BRAIN_MODE in ["demo", "test"] else "./User_Look_at",
+        "user_look_at": f"{base}/Temporary/User_Look_at",
         "brain_qtl_file": "Singularity_Dave_Brain.QTL",
         "miner_control_file": f"{base}/Temporary/Template/miner_control.json",
         "miner_commands_file_generic": f"{base}/Temporary/Template/miner_commands.json"
