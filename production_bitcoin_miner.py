@@ -6788,6 +6788,18 @@ if __name__ == "__main__":
     # show_solutions_only handled by Brain.QTL
     # All other arguments handled by Brain.QTL flag system
 
+    # Explicitly add critical flags to ensure they exist regardless of Brain.QTL
+    try:
+        parser.add_argument("--daemon", action="store_true", help="Run in daemon mode")
+        parser.add_argument("--miner-id", type=int, help="Miner ID")
+        parser.add_argument("--demo", action="store_true", help="Demo mode")
+        # Add instruction and output arguments explicitly
+        parser.add_argument("--instruction", type=str, help="Path to instruction file")
+        parser.add_argument("--output", type=str, help="Path to output file")
+    except argparse.ArgumentError:
+        # Flags might have been added by Brain.QTL dynamic loader
+        pass
+
     args = parser.parse_args()
 
     if getattr(args, "smoke_test", False):
@@ -6832,7 +6844,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)  # Ctrl + C
 
-    # Check if we're running in coordination mode
+    # Check if we're running in coordination mode (standalone task)
     if args.instruction and args.output:
         print(f"🔗 COORDINATION MODE - Reading instructions from {args.instruction}")
         try:
@@ -6934,7 +6946,7 @@ if __name__ == "__main__":
                 global_miner.graceful_shutdown()
 
     # Brain.QTL coordinated mode
-    daemon_mode = False  # Direct execution when called standalone
+    daemon_mode = getattr(args, "daemon", False)
     
     if not daemon_mode:
         print("🏭 PRODUCTION BITCOIN MINER - BRAIN.QTL COORDINATION")
@@ -6948,20 +6960,21 @@ if __name__ == "__main__":
         miner = ProductionBitcoinMiner(
             daemon_mode=daemon_mode,
             show_solutions_only=False,  # Brain.QTL configuration
-            demo_mode=False,  # Production mode
-            terminal_id="MINER_001",
+            demo_mode=getattr(args, "demo", False),
+            terminal_id=f"MINER_{args.miner_id:03d}" if args.miner_id else "MINER_001",
             max_attempts=None,
             target_leading_zeros=80,  # Ultra Hex 80 zeros
-            miner_id=1  # Default miner ID
+            miner_id=args.miner_id if args.miner_id else 1
         )
         global_miner = miner  # Set global reference for signal handling
 
-        # Brain.QTL coordinated production mining
-        if not daemon_mode:
+        if daemon_mode:
+            miner.start_daemon_work_loop()
+        else:
+            # Brain.QTL coordinated production mining
             print("⚡ Starting production Bitcoin mining...")
-        
-        # Production mining mode (Brain.QTL orchestrated)
-        miner.run_production_mining()  # Brain.QTL manages all parameters
+            # Production mining mode (Brain.QTL orchestrated)
+            miner.run_production_mining()  # Brain.QTL manages all parameters
 
     except KeyboardInterrupt:
         print("\n⚠️ Mining interrupted by user")

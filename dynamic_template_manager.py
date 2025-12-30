@@ -1031,6 +1031,67 @@ except (ImportError, SyntaxError, Exception) as e:
     print(f"⚠️ Global brain not available - using fallback: {e}")
 
 
+class UltraHexSystem:
+    """
+    Ultra Hex Oversight System
+    Manages exponential difficulty scaling and bucket consensus for 64+ hex values.
+    """
+    def __init__(self):
+        self.bucket_size = 64
+        self.max_digits = 256
+        self.base_difficulty = 2**64
+
+    def calculate_bucket(self, leading_zeros: int) -> Dict[str, Any]:
+        """
+        Calculate the Ultra Hex bucket for a given number of leading zeros.
+        Buckets represent exponential difficulty tiers (e.g., 0-63, 64-127).
+        """
+        sanitized_zeros = max(0, int(leading_zeros))
+        bucket_digit = min(self.max_digits, (sanitized_zeros // self.bucket_size) + 1)
+        bucket_start = (bucket_digit - 1) * self.bucket_size
+        bucket_end = min(bucket_start + (self.bucket_size - 1), (self.max_digits * self.bucket_size) - 1)
+        progress = max(0, sanitized_zeros - bucket_start)
+        remaining = max(0, self.bucket_size - progress)
+
+        # Exponential difficulty scaling
+        # Each bucket represents a 2^64 multiplier in search space difficulty
+        difficulty_tier = self.base_difficulty ** (bucket_digit - 1)
+
+        return {
+            "definition": "Ultra Hex bucket consensus (64 leading hex zeros per digit)",
+            "bucket_label": f"Ultra-{bucket_digit}",
+            "bucket_size": self.bucket_size,
+            "ultra_hex_digit": bucket_digit,
+            "bucket_range": [bucket_start, bucket_end],
+            "progress_within_bucket": progress,
+            "remaining_in_bucket": remaining,
+            "required_leading_zeros": sanitized_zeros,
+            "max_digits": self.max_digits,
+            "difficulty_tier": str(difficulty_tier),  # String to avoid overflow in JSON
+            "timestamp": current_timestamp(),
+        }
+
+    def verify_consensus(self, solution_data: Dict[str, Any], template_target_zeros: int) -> Dict[str, Any]:
+        """
+        Verify if a solution meets the consensus requirements for its Ultra Hex bucket.
+        """
+        leading_zeros = solution_data.get("leading_zeros_achieved", 0)
+        bucket_info = self.calculate_bucket(leading_zeros)
+
+        # Consensus check: Does the solution meet the template's required bucket level?
+        # Note: Usually we check against specific zeros, but here we enforce bucket logic.
+        target_bucket_info = self.calculate_bucket(template_target_zeros)
+
+        consensus_met = leading_zeros >= template_target_zeros
+
+        return {
+            "consensus_met": consensus_met,
+            "solution_bucket": bucket_info,
+            "target_bucket": target_bucket_info,
+            "status": "verified" if consensus_met else "failed_consensus"
+        }
+
+
 class GPSEnhancedDynamicTemplateManager:
     # Mapping between logical file keys and their static example references
     EXAMPLE_FILE_MAP: Dict[str, Path] = {
@@ -1249,8 +1310,10 @@ class GPSEnhancedDynamicTemplateManager:
             "templates_optimized": 0,
         }
 
-        self.ultra_hex_bucket_size = 64
-        self.ultra_hex_max_digits = 256
+        # Ultra Hex System Integration
+        self.ultra_hex_system = UltraHexSystem()
+        self.ultra_hex_bucket_size = self.ultra_hex_system.bucket_size
+        self.ultra_hex_max_digits = self.ultra_hex_system.max_digits
         self.ultra_hex_consensus: Optional[Dict[str, Any]] = None
         
         # CRITICAL FIX: Initialize solution_targeting dictionary
@@ -2073,27 +2136,7 @@ class GPSEnhancedDynamicTemplateManager:
 
     def _build_ultra_hex_consensus(self, required_zeros: int) -> Dict[str, Any]:
         """Generate Ultra Hex bucket consensus aligned with production miner."""
-        bucket_size = self.ultra_hex_bucket_size
-        max_digits = self.ultra_hex_max_digits
-        sanitized_zeros = max(0, int(required_zeros))
-        bucket_digit = min(max_digits, (sanitized_zeros // bucket_size) + 1)
-        bucket_start = (bucket_digit - 1) * bucket_size
-        bucket_end = min(bucket_start + (bucket_size - 1), (max_digits * bucket_size) - 1)
-        progress = max(0, sanitized_zeros - bucket_start)
-        remaining = max(0, bucket_size - progress)
-
-        return {
-            "definition": "Ultra Hex bucket consensus (64 leading hex zeros per digit)",
-            "bucket_label": f"Ultra-{bucket_digit}",
-            "bucket_size": bucket_size,
-            "ultra_hex_digit": bucket_digit,
-            "bucket_range": [bucket_start, bucket_end],
-            "progress_within_bucket": progress,
-            "remaining_in_bucket": remaining,
-            "required_leading_zeros": sanitized_zeros,
-            "max_digits": max_digits,
-            "timestamp": current_timestamp(),
-        }
+        return self.ultra_hex_system.calculate_bucket(required_zeros)
 
     def _augment_template_with_consensus(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
         """Attach consensus metadata without mutating original template."""
